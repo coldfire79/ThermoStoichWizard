@@ -5,6 +5,7 @@ import os
 import uuid
 
 from installed_clients.KBaseReportClient import KBaseReport
+from installed_clients.DataFileUtilClient import DataFileUtil
 #END_HEADER
 
 
@@ -57,7 +58,16 @@ class ThermoStoichWizard:
         #######################################################################
         #  run
         #######################################################################
-        print ("Input parameter", params['input_tbl'].keys())
+        print ("Input parameter", params['input_tbl'])
+        dfu = DataFileUtil(self.callback_url)
+        input_tbl = dfu.get_objects({'object_refs': [params['input_tbl']]})['data'][0]
+
+        print(input_tbl['data']['attributes'])
+        for peak in input_tbl['data']['instances']:
+            print(peak, input_tbl['data']['instances'][peak])
+            break
+        print(input_tbl['info'])
+
         from ThermoStoichWizard.ThermoStoichiometry import ThermoStoichiometry
 
         mf = 'C35H32O6C13S2'
