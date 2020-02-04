@@ -34,8 +34,9 @@
                     "target_property": "workspace_id"
                 },{
                     "input_parameter": "input_tbl",
-                    "target_property": "input_tbl"
-                }
+                    "target_property": "input_tbl",
+                    "target_type_transform": "resolved-ref"
+                },
             ],
             "output_mapping": [
                 {
