@@ -1,10 +1,10 @@
 #
 # define display information
 #
-name: Method Name Here
+name: Thermo Stoichiometry Wizard
 
 tooltip: |
-    Perform some kind of method
+    Extract the thermodynamic stoichiometry from the chemical compositions
 
 screenshots: []
 
@@ -24,7 +24,7 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    parameter_1 :
+    input_tbl :
         ui-name : |
             First parameter
         short-hint : |

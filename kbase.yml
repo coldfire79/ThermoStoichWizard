@@ -2,7 +2,7 @@ module-name:
     ThermoStoichWizard
 
 module-description:
-    A KBase module
+    A KBase module to extract thermo stoichiometry
 
 service-language:
     python
