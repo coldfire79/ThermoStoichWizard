@@ -69,8 +69,11 @@ class ThermoStoichWizard:
         html_folder = os.path.join(self.shared_folder, 'html')
         os.mkdir(html_folder)
 
+        html_str = "<html><head>Thermo Stoich Wizard Report</head><body><br><br>{}:{}</body></html>"
+        html_str = html_str.format(mf, therm.extract_composition())
+
         with open(os.path.join(html_folder, "index.html"), 'w') as index_file:
-            index_file.write("<html><body>Thermo Stoich Wizard Report</body></html>")
+            index_file.write(html_str)
 
         report = KBaseReport(self.callback_url)
         html_dir = {
