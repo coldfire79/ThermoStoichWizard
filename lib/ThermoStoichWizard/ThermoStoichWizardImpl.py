@@ -3,9 +3,14 @@
 import logging
 import os
 import uuid
+import pandas as pd
 
 from installed_clients.KBaseReportClient import KBaseReport
 from installed_clients.DataFileUtilClient import DataFileUtil
+from installed_clients.fba_toolsClient import fba_tools
+
+from ThermoStoichWizard.ThermoStoichiometry import ThermoStoichiometry
+
 #END_HEADER
 
 
@@ -56,7 +61,7 @@ class ThermoStoichWizard:
         uuid_string = str(uuid.uuid4())
 
         #######################################################################
-        #  run
+        #  check out the input table
         #######################################################################
         print ("Input parameter", params['input_tbl'])
         dfu = DataFileUtil(self.callback_url)
@@ -68,11 +73,60 @@ class ThermoStoichWizard:
             break
         print(input_tbl['info'])
 
-        from ThermoStoichWizard.ThermoStoichiometry import ThermoStoichiometry
+        #######################################################################
+        #  compute thermo stoichiometry
+        #######################################################################
 
         mf = 'C35H32O6C13S2'
         therm = ThermoStoichiometry(mf)
         print(therm.extract_composition())
+
+        #######################################################################
+        #  create the tsv files for fba
+        #######################################################################
+        # comp.tsv
+        comp_cols = ['id','name','formula','charge','inchikey','smiles','deltag','kegg id','ms id']
+        rxn_cols = ['id','direction','compartment','gpr','name','enzyme','deltag','reference','equation','definition','ms id','bigg id','kegg id','kegg pathways','metacyc pathways']
+        
+        compounds = []
+        compounds.append({'id':'comp1_c0','formula':'C35H32O6C13S2'})
+        compounds.append({'id':'h2o_c0','formula':'H2O'})
+        compounds.append({'id':'hco3_c0','formula':'HCO3'})
+        compounds.append({'id':'nh4_c0','formula':'NH4'})
+        compounds.append({'id':'hpo4_c0','formula':'HPO4'})
+        compounds.append({'id':'hs_c0','formula':'HS'})
+        compounds.append({'id':'h_c0','formula':'H'})
+
+
+        comp_df = pd.DataFrame(compounds, columns=comp_cols)
+
+        reactions = []
+        reactions.append({'id':'biomass_c0','equation':'(1)  comp1[c0] <=> (1)  h2o[c0] + (1)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
+
+        rxn_df = pd.DataFrame(reactions,columns=rxn_cols)
+
+
+        compounds_file = os.path.join(self.shared_folder, "temp_comps.tsv")
+        reactions_file = os.path.join(self.shared_folder, "temp_rxns.tsv")
+
+        comp_df.to_csv(compounds_file, sep='\t', index=False)
+        rxn_df.to_csv(reactions_file, sep='\t', index=False)
+        
+        #######################################################################
+        #  generate fbamodel
+        #######################################################################
+        fba_param = {
+            # 'model_name':'model' + uuid_string,
+            'file_type':'tsv',
+            'compounds_file':{'path': compounds_file},
+            'model_file':{'path': reactions_file},
+            'biomass':['biomass_c0'],
+            'model_name': "ThermoStoic_model",
+            'workspace_name': params['workspace_name']
+        }
+        fbaobj = fba_tools(self.callback_url)
+        wref = fbaobj.tsv_file_to_model(p=fba_param)
+        print('fba_model:',wref)
         #######################################################################
         # 
         #######################################################################

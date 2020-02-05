@@ -84,7 +84,70 @@ class ThermoStoichiometry(object):
         # Step 2a) stoichAnStar: stoichiometries for anabolic reaciton 
         #          (N source = NH4+)
         #######################################################################
-        yEd = stoich_electron_donor[7]
-        yEa = stoich_electron_acceptor[7]
-        stoich_cat_rxns = stoich_electron_donor-(yEd/yEa)*stoich_electron_acceptor
-        
+        chemFormBiom = [1, 1.8, 0.2, 0.5, 0, 0, 0]  # C H_1.8 N_0.2 O_0.5
+        aB = chemFormBiom[0]
+        bB = chemFormBiom[1]
+        cB = chemFormBiom[2]
+        dB = chemFormBiom[3]
+        eB = chemFormBiom[4]
+        fB = chemFormBiom[5]
+        zB = chemFormBiom[6]
+
+        ySource = -1
+        yH2o = -(3*aB+4*eB-dB)
+        yHco3 = aB
+        yNh4 = cB
+        yHpo4 = eB
+        yHs = fB
+        yH = 5*aB+bB-4*cB-2*dB+7*eB-fB
+        yE = -zB+4*aB+bB-3*cB-2*dB+5*eB-2*fB
+        # add additional components: e-acceptor and biomass in the end
+        stoichAnStarB = np.array([ySource,yH2o,yHco3,yNh4,yHpo4,yHs,yH,yE,0,0])
+        stoichAnStarB = -stoichAnStarB
+        stoichAnStarB[-1] = stoichAnStarB[0]
+        stoichAnStarB[0] = 0
+
+        # Step 2b) "overall" anabolic reaction
+        eA4Anabolic = [ # electron acceptor for anabolic reaction
+            'O2',    # Kleerebezem and Van Loosdrecht (2010)
+            'HCO3-' # % McCarty (year?)
+        ]
+
+        for i in eA4Anabolic:
+            eA4Ana = eA4Anabolic[i]
+            if eA4Ana == 'O2':
+                stoichAnStar_O2 = stoichAnStarB+(1/a)*stoich_electron_donor
+                yEana = stoichAnStar_O2[7]
+                if yEana > 0:
+                    stoichAn_O2 = stoichAnStar_O2-yEana/yEa*stoich_electron_acceptor
+                elif yEana < 0:
+                    stoichAn_O2 = stoichAnStar_O2-yEana/yEd*stoich_electron_donor
+                else:
+                    stoichAn_O2 = stoichAnStar_O2
+            elif eA4Ana == 'HCO3-':
+                yEd = stoich_electron_donor[7]
+                yEa = stoichAnStarB[7]
+                stoichAn_HCO3 = stoich_electron_donor-(yEd/yEa)*stoichAnStarB
+                stoichAn_HCO3 = stoichAn_HCO3/stoichAn_HCO3[9]
+
+        # Step 3: get lambda
+  
+        # - estimate delGcox0 using LaRowe and Van Cappellen (2011)
+        ne = -z+4*a+b-3*c-2*d+5*e-2*f  # number of electrons transferred in D 
+        nosc = -ne/a+4  # nominal oxidataion state of carbon 
+        delGcox0PerE = 60.3-28.5*nosc  # kJ/C-mol
+        delGcox0 = delGcox0PerE*a*abs(stoich_electron_donor[0])  # kJ/rxn
+
+        # - estimate delGf0 for electron donor
+        delGf0_D_zero = 0
+        delGf0_zero = [delGf0_D_zero, -237.2, -586.8, -79.3, -1096.1, 12.1, 0, 0, 16.4, -67]
+        # delGcox0_zero = drop(delGf0_zero %*% stoichD)
+        # delGf0_D_est = (delGcox0-delGcox0_zero)/stoichD[1]
+        # # - finally, delGf0
+        # delGf0 = delGf0_zero
+        # delGf0[1] = delGf0_D_est
+
+        # # - standard delG at pH=0
+        # delGcat0 = drop(delGf0 %*% stoichCat)
+        # delGan0_O2 = drop(delGf0 %*% stoichAn_O2)
+        # delGan0_HCO3 = drop(delGf0 %*% stoichAn_HCO3)

@@ -10,6 +10,7 @@ MAINTAINER KBase Developer
 
 
 # -----------------------------------------
+RUN pip install pandas
 
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
