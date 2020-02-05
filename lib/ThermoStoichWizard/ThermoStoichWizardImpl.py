@@ -84,7 +84,6 @@ class ThermoStoichWizard:
         #######################################################################
         #  create the tsv files for fba
         #######################################################################
-        # comp.tsv
         comp_cols = ['id','name','formula','charge','inchikey','smiles','deltag','kegg id','ms id']
         rxn_cols = ['id','direction','compartment','gpr','name','enzyme','deltag','reference','equation','definition','ms id','bigg id','kegg id','kegg pathways','metacyc pathways']
         
@@ -105,13 +104,12 @@ class ThermoStoichWizard:
 
         rxn_df = pd.DataFrame(reactions,columns=rxn_cols)
 
-
         compounds_file = os.path.join(self.shared_folder, "temp_comps.tsv")
         reactions_file = os.path.join(self.shared_folder, "temp_rxns.tsv")
 
         comp_df.to_csv(compounds_file, sep='\t', index=False)
         rxn_df.to_csv(reactions_file, sep='\t', index=False)
-        
+
         #######################################################################
         #  generate fbamodel
         #######################################################################
@@ -125,8 +123,38 @@ class ThermoStoichWizard:
             'workspace_name': params['workspace_name']
         }
         fbaobj = fba_tools(self.callback_url)
-        wref = fbaobj.tsv_file_to_model(p=fba_param)
-        print('fba_model:',wref)
+        fba_model_wref = fbaobj.tsv_file_to_model(p=fba_param)
+        print('fba_model:', fba_model_wref)
+
+        #######################################################################
+        #  create the tsv files for media
+        #######################################################################
+        media_cols = ['compounds','name','formula','minFlux','maxFlux','concentration']
+
+        media_compounds = []
+        media_compounds.append({'id':'comp1_c0','formula':'C35H32O6C13S2','name':'comp1','minFlux':-1000,'maxFlux':1000,'concentration':0})
+        media_compounds.append({'id':'comp2_c0','formula':'C35H32O6S2','name':'comp2','minFlux':-1000,'maxFlux':1000,'concentration':0})
+        media_compounds.append({'id':'comp3_c0','formula':'C35H13S2','name':'comp3','minFlux':-1000,'maxFlux':1000,'concentration':0})
+
+        media_df = pd.DataFrame(media_compounds, columns=media_cols)
+
+        media_tsv_file = os.path.join(self.shared_folder, "temp_media.tsv")
+
+        media_df.to_csv(media_tsv_file, sep='\t', index=False)
+        
+
+        #######################################################################
+        #  generate media
+        #######################################################################
+        media_param = {
+            'file_type':'tsv',
+            'media_file':{'path': media_tsv_file},
+            'media_name': "ThermoStoic_media",
+            'workspace_name': params['workspace_name']
+        }
+        media_wref = fbaobj.tsv_file_to_media(p=media_param)
+        print('media:',media_wref)
+
         #######################################################################
         # 
         #######################################################################
