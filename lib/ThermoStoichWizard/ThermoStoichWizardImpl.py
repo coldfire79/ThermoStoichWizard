@@ -80,6 +80,7 @@ class ThermoStoichWizard:
         mf = 'C35H32O6C13S2'
         therm = ThermoStoichiometry(mf)
         print(therm.extract_composition())
+        print(therm.get_thermo_stoich())
 
         #######################################################################
         #  create the tsv files for fba
@@ -89,6 +90,8 @@ class ThermoStoichWizard:
         
         compounds = []
         compounds.append({'id':'comp1_c0','formula':'C35H32O6C13S2'})
+        compounds.append({'id':'comp2_c0','formula':'C35H32O6S2'})
+        compounds.append({'id':'comp3_c0','formula':'C35H32O4S2'})
         compounds.append({'id':'h2o_c0','formula':'H2O'})
         compounds.append({'id':'hco3_c0','formula':'HCO3'})
         compounds.append({'id':'nh4_c0','formula':'NH4'})
@@ -100,7 +103,9 @@ class ThermoStoichWizard:
         comp_df = pd.DataFrame(compounds, columns=comp_cols)
 
         reactions = []
-        reactions.append({'id':'biomass_c0','equation':'(1)  comp1[c0] <=> (1)  h2o[c0] + (1)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
+        reactions.append({'id':'rxn1_c0','equation':'(1)  comp1[c0] <=> (1)  h2o[c0] + (1)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
+        reactions.append({'id':'rxn2_c0','equation':'(1)  comp2[c0] <=> (2)  h2o[c0] + (2)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
+        reactions.append({'id':'rxn3_c0','equation':'(1)  comp3[c0] <=> (2)  h2o[c0] + (1)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
 
         rxn_df = pd.DataFrame(reactions,columns=rxn_cols)
 
@@ -118,7 +123,7 @@ class ThermoStoichWizard:
             'file_type':'tsv',
             'compounds_file':{'path': compounds_file},
             'model_file':{'path': reactions_file},
-            'biomass':['biomass_c0'],
+            'biomass':['rxn1_c0'],
             'model_name': "ThermoStoic_model",
             'workspace_name': params['workspace_name']
         }
@@ -142,7 +147,6 @@ class ThermoStoichWizard:
 
         media_df.to_csv(media_tsv_file, sep='\t', index=False)
         
-
         #######################################################################
         #  generate media
         #######################################################################
