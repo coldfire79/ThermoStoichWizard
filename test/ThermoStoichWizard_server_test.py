@@ -86,7 +86,7 @@ class ThermoStoichWizardTest(unittest.TestCase):
 
         params={
             'workspace_name': self.wsName,
-            "input_tbl": "37627/3/1",
+            "input_tbl": "37627/20/1",
         }
         ########################################################################
         ret = self.serviceImpl.run_ThermoStoichWizard(self.ctx, params)
