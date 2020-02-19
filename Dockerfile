@@ -10,7 +10,7 @@ MAINTAINER KBase Developer
 
 
 # -----------------------------------------
-RUN pip install pandas
+RUN pip install pandas matplotlib seaborn
 
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work

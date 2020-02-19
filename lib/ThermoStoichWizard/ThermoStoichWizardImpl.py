@@ -9,7 +9,7 @@ from installed_clients.KBaseReportClient import KBaseReport
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.fba_toolsClient import fba_tools
 
-from ThermoStoichWizard.ThermoStoichiometry import ThermoStoichiometry
+from ThermoStoichWizard.ThermoStoichiometry import ThermoStoichiometry, FTICRResult
 
 #END_HEADER
 
@@ -58,8 +58,11 @@ class ThermoStoichWizard:
         # ctx is the context object
         # return variables are: output
         #BEGIN run_ThermoStoichWizard
+        
         uuid_string = str(uuid.uuid4())
-
+        objects_created = []
+        output_files = []
+        
         #######################################################################
         #  check out the input table
         #######################################################################
@@ -67,106 +70,95 @@ class ThermoStoichWizard:
         dfu = DataFileUtil(self.callback_url)
         input_tbl = dfu.get_objects({'object_refs': [params['input_tbl']]})['data'][0]
 
-        print(input_tbl['data']['attributes'])
+        # # investigate input_tbl
+        # for peak in input_tbl['data']['instances']:
+        #     print(peak, input_tbl['data']['instances'][peak])
+        #     break
+        # print(input_tbl['info'])
+
         tbl_cols = [info['attribute'] for info in input_tbl['data']['attributes']]
         tbl_df = pd.DataFrame.from_dict(input_tbl['data']['instances'], orient='index', columns=tbl_cols)
-        print(tbl_df.head())
-
-        num_peaks = tbl_df.shape[0]
-        num_cpds = tbl_df.mf.drop_duplicates().shape[0]
-
-        tbl_df.to_csv(os.path.join(self.shared_folder, "input_peaks.csv"))
-
-        for peak in input_tbl['data']['instances']:
-            print(peak, input_tbl['data']['instances'][peak])
-            break
-        print(input_tbl['info'])
 
         #######################################################################
         #  compute thermo stoichiometry
         #######################################################################
+        fticr = FTICRResult(tbl_df)
+        fticr.to_csv(os.path.join(self.shared_folder, "input_compounds.csv"))
 
-        mf = 'C35H32O6C13S2'
-        therm = ThermoStoichiometry(mf)
-        print(therm.extract_composition())
-        print(therm.get_all_thermo_stoich())
+        fticr.run()
+        output_folder = os.path.join(self.shared_folder, 'csv')
+        os.mkdir(output_folder)
+        fticr.save_result_files(output_folder)
+        output_filenames = ["stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3","thermodynamic_props"]
+        output_files = [{'path': output_folder+'/{}.csv'.format(n), 'name': n, 'label': n, 'description': n} for n in output_filenames]
+
+        # filter out the unassigned peaks
+        num_peaks = fticr.num_peaks
+        num_cpds = fticr.num_cpds
+
+        print('num_peaks:{}, num_cpds:{}'.format(num_peaks, num_cpds))
 
         # #######################################################################
         # #  create the tsv files for fba
         # #######################################################################
-        # comp_cols = ['id','name','formula','charge','inchikey','smiles','deltag','kegg id','ms id']
-        # rxn_cols = ['id','direction','compartment','gpr','name','enzyme','deltag','reference','equation','definition','ms id','bigg id','kegg id','kegg pathways','metacyc pathways']
-        
-        # compounds = []
-        # compounds.append({'id':'comp1_c0','formula':'C35H32O6C13S2'})
-        # compounds.append({'id':'comp2_c0','formula':'C35H32O6S2'})
-        # compounds.append({'id':'comp3_c0','formula':'C35H32O4S2'})
-        # compounds.append({'id':'h2o_c0','formula':'H2O'})
-        # compounds.append({'id':'hco3_c0','formula':'HCO3'})
-        # compounds.append({'id':'nh4_c0','formula':'NH4'})
-        # compounds.append({'id':'hpo4_c0','formula':'HPO4'})
-        # compounds.append({'id':'hs_c0','formula':'HS'})
-        # compounds.append({'id':'h_c0','formula':'H'})
+        fticr.create_fba_model_files(self.shared_folder)
 
+        #######################################################################
+        #  generate fbamodel
+        #######################################################################
+        fbaobj = fba_tools(self.callback_url)
+        def generate_fbamodel(fbaobj, fticr, model_prefix, workspace_name, compounds_file, reactions_file):
+            fba_param = {
+                # 'model_name':'model' + uuid_string,
+                'file_type':'tsv',
+                'compounds_file':{'path': compounds_file},
+                'model_file':{'path': reactions_file},
+                'biomass':['rxn1_c0'],  # TODO: how to define a biomass reaction
+                'model_name': "Thermo_{}_{}".format(model_prefix, uuid_string),
+                'workspace_name': workspace_name # 
+            }
+            fba_model_wref = fbaobj.tsv_file_to_model(p=fba_param)
+            print('fba_model:', fba_model_wref)
+            return fba_model_wref
 
-        # comp_df = pd.DataFrame(compounds, columns=comp_cols)
+        stoichiometries = ["stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3"]
+        for stoich in stoichiometries:
+            fba_model_wref = generate_fbamodel(fbaobj, fticr, model_prefix=stoich,
+                workspace_name=params['workspace_name'],
+                compounds_file=os.path.join(self.shared_folder, "temp_comps.tsv"),
+                reactions_file=os.path.join(self.shared_folder, "temp_{}.tsv".format(stoich)))
+            objects_created.append({'ref': fba_model_wref,
+                'description': "FBA model for ".format(stoich)})
+        #######################################################################
+        #  create the tsv files for media
+        #######################################################################
+        media_tsv_file = os.path.join(self.shared_folder, "temp_media.tsv")
+        fticr.create_media_file(media_tsv_file)
+        #######################################################################
+        #  generate media
+        #######################################################################
+        media_param = {
+            'file_type':'tsv',
+            'media_file':{'path': media_tsv_file},
+            'media_name': "ThermoStoic_media_{}".format(uuid_string),
+            'workspace_name': params['workspace_name']
+        }
+        media_wref = fbaobj.tsv_file_to_media(p=media_param)
+        print('media:', media_wref)
+        objects_created.append({'ref': media_wref,
+            'description': "Media object contains the initial condition."})
 
-        # reactions = []
-        # reactions.append({'id':'rxn1_c0','equation':'(1)  comp1[c0] <=> (1)  h2o[c0] + (1)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
-        # reactions.append({'id':'rxn2_c0','equation':'(1)  comp2[c0] <=> (2)  h2o[c0] + (2)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
-        # reactions.append({'id':'rxn3_c0','equation':'(1)  comp3[c0] <=> (2)  h2o[c0] + (1)  hco3[c0] + (1)  nh4[c0] + (1)  hpo4[c0] + (1)  hs[c0] + (1)  h[c0]'})
-
-        # rxn_df = pd.DataFrame(reactions,columns=rxn_cols)
-
-        # compounds_file = os.path.join(self.shared_folder, "temp_comps.tsv")
-        # reactions_file = os.path.join(self.shared_folder, "temp_rxns.tsv")
-
-        # comp_df.to_csv(compounds_file, sep='\t', index=False)
-        # rxn_df.to_csv(reactions_file, sep='\t', index=False)
-
-        # #######################################################################
-        # #  generate fbamodel
-        # #######################################################################
-        # fba_param = {
-        #     # 'model_name':'model' + uuid_string,
-        #     'file_type':'tsv',
-        #     'compounds_file':{'path': compounds_file},
-        #     'model_file':{'path': reactions_file},
-        #     'biomass':['rxn1_c0'],
-        #     'model_name': "ThermoStoic_model",
-        #     'workspace_name': params['workspace_name']
-        # }
-        # fbaobj = fba_tools(self.callback_url)
-        # fba_model_wref = fbaobj.tsv_file_to_model(p=fba_param)
-        # print('fba_model:', fba_model_wref)
-
-        # #######################################################################
-        # #  create the tsv files for media
-        # #######################################################################
-        # media_cols = ['compounds','name','formula','minFlux','maxFlux','concentration']
-
-        # media_compounds = []
-        # media_compounds.append({'id':'comp1_c0','formula':'C35H32O6C13S2','name':'comp1','minFlux':-1000,'maxFlux':1000,'concentration':0})
-        # media_compounds.append({'id':'comp2_c0','formula':'C35H32O6S2','name':'comp2','minFlux':-1000,'maxFlux':1000,'concentration':0})
-        # media_compounds.append({'id':'comp3_c0','formula':'C35H13S2','name':'comp3','minFlux':-1000,'maxFlux':1000,'concentration':0})
-
-        # media_df = pd.DataFrame(media_compounds, columns=media_cols)
-
-        # media_tsv_file = os.path.join(self.shared_folder, "temp_media.tsv")
-
-        # media_df.to_csv(media_tsv_file, sep='\t', index=False)
-        
-        # #######################################################################
-        # #  generate media
-        # #######################################################################
-        # media_param = {
-        #     'file_type':'tsv',
-        #     'media_file':{'path': media_tsv_file},
-        #     'media_name': "ThermoStoic_media",
-        #     'workspace_name': params['workspace_name']
-        # }
-        # media_wref = fbaobj.tsv_file_to_media(p=media_param)
-        # print('media:',media_wref)
+        #######################################################################
+        # figures
+        #######################################################################
+        fig_folder = os.path.join(self.shared_folder, 'fig')
+        os.mkdir(fig_folder)
+        lambda_dist_path = os.path.join(fig_folder, "lambda_dist.png")
+        fticr.plot_lambda_dist(fout=lambda_dist_path)
+        delGcox_dist_path = os.path.join(fig_folder, "delGcox_dist.png")
+        fticr.plot_delta_gibb_dist('delGcox', r'$\Delta G^{Cox}$', delGcox_dist_path)
+        delGcat_dist_path = os.path.join(fig_folder, "delGcat_dist.png")
+        fticr.plot_delta_gibb_dist('delGcat', r'$\Delta G^{Cat}$', delGcat_dist_path)
 
         #######################################################################
         # html report
@@ -174,27 +166,100 @@ class ThermoStoichWizard:
         html_folder = os.path.join(self.shared_folder, 'html')
         os.mkdir(html_folder)
 
-        html_str = '\
-        <html>\
-          <head><title>Thermo Stoich Wizard Report</title>\
-          <link href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" rel="stylesheet">\
-          </head>\
-          <body><br><br>{}:{}<br>{}:{}<div id="cpd_tbl">{}</div>\
-          </body>\
-          <script src="https://code.jquery.com/jquery-3.3.1.js"></script> \
-          <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>\
-          <script type="text/javascript">\
-            $(document).ready( function () {{\
-              $("#cpd_tbl table").DataTable();\
-            }});\
-          </script>\
-        </html>'
-        
-        import json
+        # html_str = '\
+        # <html>\
+        #   <head><title>Thermo Stoich Wizard Report</title>\
+        #   <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">\
+        #   </head>\
+        #   <body><br><br>{}:{}<br>{}:{}<div id="cpd_tbl">{}</div>\
+        #   </body>\
+        #   <script src="https://code.jquery.com/jquery-3.3.1.js"></script> \
+        #   <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>\
+        #   <script type="text/javascript">\
+        #     $(document).ready( function () {{\
+        #       $("#cpd_tbl table").DataTable();\
+        #     }});\
+        #   </script>\
+        # </html>'
 
+        # html_str = '\
+        # <html>\
+        #   <head><title>Thermo Stoich Wizard Report</title>\
+        #   <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css">\
+        #   </head>\
+        #   <body><br><br>{}:{}<br>{}:{}\
+        #   <div><img src="{}" alt="Lambda distribution"></div><div><img src="{}" alt="delGcat distribution"></div><div><img src="{}" alt="delGcox distribution"></div>\
+        #   </body>\
+        #   <script src="https://code.jquery.com/jquery-3.3.1.js"></script> \
+        #   <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>\
+        #   </script>\
+        # </html>'
+        html_str = '<!doctype html>'
+        html_str += '<html lang="en">'
+        html_str += '<head>'
+        html_str += '<meta charset="utf-8">'
+        html_str += '<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">'
+        html_str += '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">'
+        html_str += '<title>Thermo Stoich Wizard Report</title>'
+        html_str += '</head>'
+        html_str += '<body>'
+        html_str += '<h1>Thermo Stoich Wizard Report</h1>'
+        html_str += '<h4>{}:{}</h4>'
+        html_str += '<h4>{}:{}</h4>'
+        html_str += '<div class="container">'
+        html_str += '<div class="row">'
+        html_str += '<div class="col-md-4">'
+        html_str += '<div class="card mb-4 box-shadow">'
+        html_str += '<img class="card-img-top" alt="lambda_dist" src="../fig/lambda_dist.png" style="height: 225px; width: 100%; display: block;">'
+        html_str += '<div class="card-body">'
+        html_str += '<p class="card-text">Energy coupling thermodynamic parameter</p>'
+        html_str += '<div class="d-flex justify-content-between align-items-center">'
+        html_str += '<div class="btn-group">'
+        html_str += '<button type="button" class="btn btn-sm btn-outline-secondary">Save</button>'
+        html_str += '</div>'
+        html_str += '<small class="text-muted">9 mins</small>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '<div class="col-md-4">'
+        html_str += '<div class="card mb-4 box-shadow">'
+        html_str += '<img class="card-img-top" alt="delGcat_dist" src="../fig/delGcat_dist.png" style="height: 225px; width: 100%; display: block;">'
+        html_str += '<div class="card-body">'
+        html_str += '<p class="card-text">Gibbs free energy change for catabolic reaction</p>'
+        html_str += '<div class="d-flex justify-content-between align-items-center">'
+        html_str += '<div class="btn-group">'
+        html_str += '<button type="button" class="btn btn-sm btn-outline-secondary">Save</button>'
+        html_str += '</div>'
+        html_str += '<small class="text-muted">9 mins</small>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '<div class="col-md-4">'
+        html_str += '<div class="card mb-4 box-shadow">'
+        html_str += '<img class="card-img-top" alt="delGcox_dist" src="../fig/delGcox_dist.png" style="height: 225px; width: 100%; display: block;">'
+        html_str += '<div class="card-body">'
+        html_str += '<p class="card-text">Gibbs free energy change for an electron donor half reaction</p>'
+        html_str += '<div class="d-flex justify-content-between align-items-center">'
+        html_str += '<div class="btn-group">'
+        html_str += '<button type="button" class="btn btn-sm btn-outline-secondary">Save</button>'
+        html_str += '</div>'
+        html_str += '<small class="text-muted">9 mins</small>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '</div>'
+        html_str += '<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>'
+        html_str += '<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>'
+        html_str += '<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>'
+        html_str += '</body>'
+        html_str += '</html>'
+        
         html_str = html_str.format("Number of peaks", num_peaks,
-                                   "Number of compounds", num_cpds,
-                                   tbl_df.to_html())
+                                   "Number of compounds", num_cpds)
 
         with open(os.path.join(html_folder, "index.html"), 'w') as index_file:
             index_file.write(html_str)
@@ -206,6 +271,8 @@ class ThermoStoichWizard:
             'description': 'Thermo Stoich Wizard Report'
         }
         report_info = report.create_extended_report({
+            'objects_created': objects_created,
+            'file_links': output_files,
             'html_links': [html_dir],
             'direct_html_link_index': 0,
             'report_object_name': 'thermo_stoich_wizard_report_' + uuid_string,

@@ -1,48 +1,260 @@
+'''
+Compute the thermodynamic stoichiometries for chemical compositions
+'''
+
 import numpy as np
+import pandas as pd
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 import re
+import os
+
+# CHNOPS chemical elements
+CHEMICAL_ELEMENTS = ["C","H","N","O","P","S"]
+REQUIRED_COLUMNS = CHEMICAL_ELEMENTS+['Candidates']
+
+class FTICRResult(object):
+    """FTICR Result"""
+    def __init__(self, tbl):
+        super(FTICRResult, self).__init__()
+        if self.isvalid(tbl):
+            self.tbl = tbl
+            self._assigned_tbl = self._filter(tbl)
+
+            # mapping table: cpd id and molecular formula (unique)
+            self.id2mf = self._assigned_tbl.mf.to_dict()
+            self.mf2id = pd.Series(self._assigned_tbl.index.values, index=self._assigned_tbl.mf.values).to_dict()
+            
+            self._num_peaks = tbl.shape[0]
+            self._num_cpds = self._assigned_tbl.shape[0]
+        else:
+            print('[Error] Input table requires these columns (output format in Formularity)\n{}'
+                .format(REQUIRED_COLUMNS))
+            raise(Exception('Input table format'))
+        
+    @property
+    def num_peaks(self):
+        return self._num_peaks
+
+    @property
+    def num_cpds(self):
+        return self._num_cpds
+
+    def isvalid(self, tbl):
+        '''
+            validate if the input table contains the essential columns, 
+            which aligns the output format of "Formularity".
+        '''
+        isvalid = np.sum([c not in tbl.columns for c in REQUIRED_COLUMNS])==0
+        return isvalid
+
+    def _filter(self, tbl):
+        '''filter out unassigned peaks and assign formulas
+            TODO: how to deal with C13 and Na
+        '''
+        # assign formulas
+        def assign_formula(row):
+            mf = ''
+            for ele in CHEMICAL_ELEMENTS:
+                if (ele in row)&(row[ele]>0):
+                    if row[ele]==1: mf += ele
+                    else: mf += ele+str(row[ele])
+            return mf
+        tbl[CHEMICAL_ELEMENTS] = tbl[CHEMICAL_ELEMENTS].astype(np.int)
+        tbl['mf'] = tbl.apply(assign_formula, axis=1)
+        tbl['cpd_id'] = ['cpd__{}'.format(i) for i in range(tbl.shape[0])]
+        tbl = tbl.set_index('cpd_id')
+        
+        # filter out unassigned peaks
+        filter_condition = tbl[CHEMICAL_ELEMENTS].sum(axis=1)>0
+        if 'C13' in tbl.columns:
+            tbl['C13'] = tbl['C13'].astype(np.int)
+            filter_condition &= tbl['C13']==0
+        if 'Na' in tbl.columns:
+            tbl['Na'] = tbl['Na'].astype(np.int)
+            filter_condition &= tbl['Na']==0
+        return tbl[filter_condition]
+
+    def to_csv(self, fout):
+        self._assigned_tbl.to_csv(fout)
+
+    def _batch_stoichiometries(self):
+        '''extract all stoichiometries
+        '''
+        def get_stoichiometry(row):
+            chem_comp = {e:row[e] for e in CHEMICAL_ELEMENTS}
+            thermo_stoich = ThermoStoichiometry(chem_comp)
+            thermo_stoich.get_all_thermo_stoich()
+            return thermo_stoich
+        return self._assigned_tbl.apply(get_stoichiometry, axis=1).to_dict()
+
+    def run(self):
+        self.all_stoich = self._batch_stoichiometries()
+        # "stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3"
+        stoich_colnames = ["donor","h2o","hco3","nh4","hpo4","hs","h","e","acceptor","biom"]
+        self.stoichD = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_electron_donor for cpd in self.all_stoich},
+            orient='index', columns=stoich_colnames)
+        self.stoichA = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_electron_acceptor for cpd in self.all_stoich},
+            orient='index', columns=stoich_colnames)
+        self.stoichCat = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_cat_rxns for cpd in self.all_stoich},
+            orient='index', columns=stoich_colnames)
+        self.stoichAn_O2 = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_anabolic_O2 for cpd in self.all_stoich},
+            orient='index', columns=stoich_colnames)
+        self.stoichAn_HCO3 = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_anabolic_HCO3 for cpd in self.all_stoich},
+            orient='index', columns=stoich_colnames)
+        self.stoichMet_O2 = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_metabolic_O2 for cpd in self.all_stoich},
+            orient='index', columns=stoich_colnames)
+        self.stoichMet_HCO3 = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_metabolic_HCO3 for cpd in self.all_stoich},
+            orient='index', columns=stoich_colnames)
+        
+        thermo_colnames = ["delGcox0PerE","delGcox0","delGcox","delGcat0","delGcat","delGan0_O2","delGan0_HCO3",
+                "delGan_O2","delGan_HCO3","delGdis_O2","delGdis_HCO3","lambda_O2","lambda_HCO3"]
+        self.thermo = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].delta_gibbs_energy+self.all_stoich[cpd].th_lambda for cpd in self.all_stoich},
+            orient='index', columns=thermo_colnames)
+        
+    def save_result_files(self, folder):
+        # save to csv files
+        self.stoichD.to_csv(folder+'/stoichD.csv')
+        self.stoichA.to_csv(folder+'/stoichA.csv')
+        self.stoichCat.to_csv(folder+'/stoichCat.csv')
+        self.stoichAn_O2.to_csv(folder+'/stoichAn_O2.csv')
+        self.stoichAn_HCO3.to_csv(folder+'/stoichAn_HCO3.csv')
+        self.stoichMet_O2.to_csv(folder+'/stoichMet_O2.csv')
+        self.stoichMet_HCO3.to_csv(folder+'/stoichMet_HCO3.csv')
+        self.thermo.to_csv(folder+'/thermodynamic_props.csv')
+    
+    def create_fba_model_files(self, folder):
+        compounds_file = os.path.join(folder, "temp_comps.tsv")
+        self.create_cpd_file_fba_model(compounds_file)
+        self.create_rxn_file_fba_model(self.stoichD, os.path.join(folder, "temp_stoichD.tsv"))
+        self.create_rxn_file_fba_model(self.stoichA, os.path.join(folder, "temp_stoichA.tsv"))
+        self.create_rxn_file_fba_model(self.stoichCat, os.path.join(folder, "temp_stoichCat.tsv"))
+        self.create_rxn_file_fba_model(self.stoichAn_O2, os.path.join(folder, "temp_stoichAn_O2.tsv"))
+        self.create_rxn_file_fba_model(self.stoichAn_HCO3, os.path.join(folder, "temp_stoichAn_HCO3.tsv"))
+        self.create_rxn_file_fba_model(self.stoichMet_O2, os.path.join(folder, "temp_stoichMet_O2.tsv"))
+        self.create_rxn_file_fba_model(self.stoichMet_HCO3, os.path.join(folder, "temp_stoichMet_HCO3.tsv"))
+
+    def create_cpd_file_fba_model(self, fout):
+        comp_cols = ['id','name','formula','charge','inchikey','smiles','deltag','kegg id','ms id']
+        compounds = [{'id':'{}_c0'.format(cid),'formula':self.id2mf[cid]} for cid in self.id2mf]
+        compounds.append({'id':'h2o_c0','formula':'H2O'})
+        compounds.append({'id':'hco3_c0','formula':'HCO3'})
+        compounds.append({'id':'nh4_c0','formula':'NH4'})
+        compounds.append({'id':'hpo4_c0','formula':'HPO4'})
+        compounds.append({'id':'hs_c0','formula':'HS'})
+        compounds.append({'id':'h_c0','formula':'H'})
+        compounds.append({'id':'e_c0','formula':'e-'})
+        compounds.append({'id':'acceptor_c0','formula':'O2'})
+        compounds.append({'id':'biom_c0','formula':'CH1p8N0p2O0p5'})
+        comp_df = pd.DataFrame(compounds, columns=comp_cols)
+        comp_df.to_csv(fout, sep='\t', index=False)
+
+    def create_rxn_file_fba_model(self, stoich_mat, fout):
+        rxn_cols = ['id','direction','compartment','gpr','name','enzyme','deltag','reference','equation',
+            'definition','ms id','bigg id','kegg id','kegg pathways','metacyc pathways']
+        
+        stoich_colnames = ["donor","h2o","hco3","nh4","hpo4","hs","h","e","acceptor","biom"]
+
+        def generate_equation(r):
+            reactants = []
+            products = []
+            for col in stoich_colnames:
+                if col=='donor': name = self.mf2id[r.name]
+                else: name = col
+
+                if r[col] == 0: continue
+                elif r[col] > 0:
+                    reactants.append('({0})  {1}[c0]'.format(r[col], name))
+                else:
+                    products.append('({0})  {1}[c0]'.format(-r[col], name))
+            return '{} <=> {}'.format(' + '.join(reactants), ' + '.join(products))
+        
+        reactions = []
+        for i, eq in enumerate(stoich_mat.apply(generate_equation, axis=1).tolist()):
+            reactions.append({'id':'rxn{}_c0'.format(i+1),'equation':eq})
+        
+        rxn_df = pd.DataFrame(reactions,columns=rxn_cols)
+        rxn_df.to_csv(fout, sep='\t', index=False)
+
+    def create_media_file(self, media_file):
+        media_cols = ['compounds','name','formula','minFlux','maxFlux','concentration']
+        media_compounds = [{'id':_id,'formula':self.id2mf[_id],'name':self.id2mf[_id],'minFlux':-1000,'maxFlux':1000,'concentration':1} for _id in self.id2mf]
+        media_df = pd.DataFrame(media_compounds, columns=media_cols)
+        media_df.to_csv(media_file, sep='\t', index=False)
+
+    def plot_lambda_dist(self, fout='lambda_dist.png'):
+        if self.thermo is not None:
+            plt.close('all')
+            g = sns.distplot(self.thermo.lambda_O2, label='O2')
+            g = sns.distplot(self.thermo.lambda_HCO3, label='HCO3')
+            plt.xlabel(r'$\lambda$', fontsize=15)
+            plt.ylabel('Distribution', fontsize=15)
+            plt.legend(fontsize=15)
+            plt.tight_layout()
+            if fout: plt.savefig(fout)
+        else:
+            print('[Warning] "plot_lambda_dist" requires self.thermo. Please use run().')
+
+    def plot_delta_gibb_dist(self, colname, label, fout='dist.png'):
+        if self.thermo is not None:
+            plt.close('all')
+            g = sns.distplot(self.thermo[colname], label=label)
+            g.set_xlabel(label+"[kJ/mol]", fontsize=15)
+            g.set_ylabel('Distribution', fontsize=15)
+            plt.legend(fontsize=15)
+            plt.tight_layout()
+            if fout: plt.savefig(fout)
+        else:
+            print('[Warning] "plot_lambda_dist" requires self.thermo. Please use run().')
+        
 
 class ThermoStoichiometry(object):
     """extract thermo stoichiometry from a chemical formula"""
     
-    CHEMICAL_ELEMENTS = ["C","H","N","O","S","P"]
+    # def __init__(self, chemical_formula, ignore_isotopes={'C13':1}):
+    #     '''
+    #         chemical_formula: chemical formula (e.g. C27H15O6NC13SP)
+    #         ignore_isotopes: ignore if you have this in the '>index' of the 
+    #             chemical_formula. it should follow the name convention
+    #     '''
+    #     super(ThermoStoichiometry, self).__init__()
+    #     self.chemical_formula = chemical_formula.upper()
+    #     if ignore_isotopes is not None:
+    #         self.ignore_isotopes = ignore_isotopes
+    #         self.__ignore_isotopes()
+    #     self.chemical_composition = self.extract_composition()
 
-    def __init__(self, chemical_formula, ignore_isotopes={'C13':1}):
-        '''
-            chemical_formula: chemical formula (e.g. C27H15O6NC13SP)
-            ignore_isotopes: ignore if you have this in the '>index' of the 
-                chemical_formula. it should follow the name convention
-        '''
+    def __init__(self, chemical_composition):
+        """extract thermo stoichiometry from a given chemical composition"""
         super(ThermoStoichiometry, self).__init__()
-        self.chemical_formula = chemical_formula.upper()
-        if ignore_isotopes is not None:
-            self.ignore_isotopes = ignore_isotopes
-            self.__ignore_isotopes()
-        self.chemical_composition = self.extract_composition()
+        self.chemical_composition = chemical_composition
 
-    def __ignore_isotopes(self):
-        '''remove the isotope tags in the end of the chemical formula
-        '''
-        for isotope_tag in self.ignore_isotopes:
-            try:
-                if self.chemical_formula.index(isotope_tag)>=self.ignore_isotopes[isotope_tag]:
-                    self.chemical_formula = self.chemical_formula.replace(isotope_tag, '')
-            except ValueError as e: # if not isotope_tag in the formular
-                continue
+    # def __ignore_isotopes(self):
+    #     '''remove the isotope tags in the end of the chemical formula
+    #     '''
+    #     for isotope_tag in self.ignore_isotopes:
+    #         try:
+    #             if self.chemical_formula.index(isotope_tag)>=self.ignore_isotopes[isotope_tag]:
+    #                 self.chemical_formula = self.chemical_formula.replace(isotope_tag, '')
+    #         except ValueError as e: # if not isotope_tag in the formular
+    #             continue
 
-    def extract_composition(self):
-        '''extract the chemimcal composition from the chemical formula
-        '''
-        # search number of elements
-        chem_comp = {}
-        for e in self.CHEMICAL_ELEMENTS:
-            composition = re.search('{}(\d*)'.format(e), self.chemical_formula)
+    # def extract_composition(self):
+    #     '''extract the chemimcal composition from the chemical formula
+    #     '''
+    #     # search number of elements
+    #     chem_comp = {}
+    #     for e in CHEMICAL_ELEMENTS:
+    #         composition = re.search('{}(\d*)'.format(e), self.chemical_formula)
 
-            if composition:
-                n_element = composition.group(1)
-                if n_element=='': chem_comp[e] = 1
-                else: chem_comp[e] = int(n_element)
-            else: chem_comp[e] = 0
-        return chem_comp
+    #         if composition:
+    #             n_element = composition.group(1)
+    #             if n_element=='': chem_comp[e] = 1
+    #             else: chem_comp[e] = int(n_element)
+    #         else: chem_comp[e] = 0
+    #     return chem_comp
 
     def get_stoich_electron_donor(self):
         a = self.chemical_composition['C']
