@@ -127,7 +127,7 @@ class ThermoStoichWizard:
                 workspace_name=params['workspace_name'],
                 compounds_file=os.path.join(self.shared_folder, "temp_comps.tsv"),
                 reactions_file=os.path.join(self.shared_folder, "temp_{}.tsv".format(stoich)))
-            objects_created.append({'ref': fba_model_wref,
+            objects_created.append({'ref': fba_model_wref['ref'],
                 'description': "FBA model for ".format(stoich)})
         #######################################################################
         #  create the tsv files for media
@@ -145,7 +145,7 @@ class ThermoStoichWizard:
         }
         media_wref = fbaobj.tsv_file_to_media(p=media_param)
         print('media:', media_wref)
-        objects_created.append({'ref': media_wref,
+        objects_created.append({'ref': media_wref['ref'],
             'description': "Media object contains the initial condition."})
 
         #######################################################################
@@ -159,6 +159,14 @@ class ThermoStoichWizard:
         fticr.plot_delta_gibb_dist('delGcox', r'$\Delta G^{Cox}$', delGcox_dist_path)
         delGcat_dist_path = os.path.join(fig_folder, "delGcat_dist.png")
         fticr.plot_delta_gibb_dist('delGcat', r'$\Delta G^{Cat}$', delGcat_dist_path)
+
+        output_files.append({'path': lambda_dist_path, 'name': 'lambda distribution',
+            'label': 'lambda distribution', 'description': 'lambda distribution'})
+        output_files.append({'path': delGcox_dist_path, 'name': 'delGcox distribution',
+            'label': 'delGcox distribution',
+            'description': 'Gibbs free energy change for an electron donor half reaction'})
+        output_files.append({'path': delGcat_dist_path, 'name': 'delGcat distribution',
+            'label': 'delGcat distribution', 'description': 'Gibbs free energy change for catabolic reaction'})
 
         #######################################################################
         # html report
