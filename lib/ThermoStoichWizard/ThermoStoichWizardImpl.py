@@ -90,7 +90,7 @@ class ThermoStoichWizard:
         os.mkdir(output_folder)
         fticr.save_result_files(output_folder)
         output_filenames = ["stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3","thermodynamic_props"]
-        output_files = [{'path': output_folder+'/{}.csv'.format(n), 'name': n, 'label': n, 'description': n} for n in output_filenames]
+        output_files = [{'path': output_folder+'/{}.csv'.format(n), 'name': '{}.csv'.format(n), 'label': n, 'description': n} for n in output_filenames]
 
         # filter out the unassigned peaks
         num_peaks = fticr.num_peaks
@@ -113,7 +113,7 @@ class ThermoStoichWizard:
                 'file_type':'tsv',
                 'compounds_file':{'path': compounds_file},
                 'model_file':{'path': reactions_file},
-                'biomass':['rxn1_c0'],  # TODO: how to define a biomass reaction
+                'biomass':['xrxn1_c0'],  # TODO: how to define a biomass reaction
                 'model_name': "Thermo_{}_{}".format(model_prefix, uuid_string),
                 'workspace_name': workspace_name # 
             }
@@ -149,30 +149,30 @@ class ThermoStoichWizard:
             'description': "Media object contains the initial condition."})
 
         #######################################################################
-        # figures
-        #######################################################################
-        fig_folder = os.path.join(self.shared_folder, 'fig')
-        os.mkdir(fig_folder)
-        lambda_dist_path = os.path.join(fig_folder, "lambda_dist.png")
-        fticr.plot_lambda_dist(fout=lambda_dist_path)
-        delGcox_dist_path = os.path.join(fig_folder, "delGcox_dist.png")
-        fticr.plot_delta_gibb_dist('delGcox', r'$\Delta G^{Cox}$', delGcox_dist_path)
-        delGcat_dist_path = os.path.join(fig_folder, "delGcat_dist.png")
-        fticr.plot_delta_gibb_dist('delGcat', r'$\Delta G^{Cat}$', delGcat_dist_path)
-
-        output_files.append({'path': lambda_dist_path, 'name': 'lambda distribution',
-            'label': 'lambda distribution', 'description': 'lambda distribution'})
-        output_files.append({'path': delGcox_dist_path, 'name': 'delGcox distribution',
-            'label': 'delGcox distribution',
-            'description': 'Gibbs free energy change for an electron donor half reaction'})
-        output_files.append({'path': delGcat_dist_path, 'name': 'delGcat distribution',
-            'label': 'delGcat distribution', 'description': 'Gibbs free energy change for catabolic reaction'})
-
-        #######################################################################
         # html report
         #######################################################################
         html_folder = os.path.join(self.shared_folder, 'html')
         os.mkdir(html_folder)
+
+        #######################################################################
+        # figures
+        #######################################################################
+        # fig_folder = os.path.join(self.shared_folder, 'fig')
+        # os.mkdir(fig_folder)
+        lambda_dist_path = os.path.join(html_folder, "lambda_dist.png")
+        fticr.plot_lambda_dist(fout=lambda_dist_path)
+        delGcox_dist_path = os.path.join(html_folder, "delGcox_dist.png")
+        fticr.plot_delta_gibb_dist('delGcox', r'$\Delta G^{Cox}$', delGcox_dist_path)
+        delGcat_dist_path = os.path.join(html_folder, "delGcat_dist.png")
+        fticr.plot_delta_gibb_dist('delGcat', r'$\Delta G^{Cat}$', delGcat_dist_path)
+
+        output_files.append({'path': lambda_dist_path, 'name': 'lambda_dist.png',
+            'label': 'lambda distribution', 'description': 'lambda distribution'})
+        output_files.append({'path': delGcox_dist_path, 'name': 'delGcox_dist.png',
+            'label': 'delGcox distribution',
+            'description': 'Gibbs free energy change for an electron donor half reaction'})
+        output_files.append({'path': delGcat_dist_path, 'name': 'delGcat_dist.png',
+            'label': 'delGcat distribution', 'description': 'Gibbs free energy change for catabolic reaction'})
 
         # html_str = '\
         # <html>\
@@ -218,7 +218,7 @@ class ThermoStoichWizard:
         html_str += '<div class="row">'
         html_str += '<div class="col-md-4">'
         html_str += '<div class="card mb-4 box-shadow">'
-        html_str += '<img class="card-img-top" alt="lambda_dist" src="../fig/lambda_dist.png" style="height: 225px; width: 100%; display: block;">'
+        html_str += '<img class="card-img-top" alt="lambda_dist" src="lambda_dist.png" style="height: 225px; width: 100%; display: block;">'
         html_str += '<div class="card-body">'
         html_str += '<p class="card-text">Energy coupling thermodynamic parameter</p>'
         html_str += '<div class="d-flex justify-content-between align-items-center">'
@@ -232,7 +232,7 @@ class ThermoStoichWizard:
         html_str += '</div>'
         html_str += '<div class="col-md-4">'
         html_str += '<div class="card mb-4 box-shadow">'
-        html_str += '<img class="card-img-top" alt="delGcat_dist" src="../fig/delGcat_dist.png" style="height: 225px; width: 100%; display: block;">'
+        html_str += '<img class="card-img-top" alt="delGcat_dist" src="delGcat_dist.png" style="height: 225px; width: 100%; display: block;">'
         html_str += '<div class="card-body">'
         html_str += '<p class="card-text">Gibbs free energy change for catabolic reaction</p>'
         html_str += '<div class="d-flex justify-content-between align-items-center">'
@@ -246,7 +246,7 @@ class ThermoStoichWizard:
         html_str += '</div>'
         html_str += '<div class="col-md-4">'
         html_str += '<div class="card mb-4 box-shadow">'
-        html_str += '<img class="card-img-top" alt="delGcox_dist" src="../fig/delGcox_dist.png" style="height: 225px; width: 100%; display: block;">'
+        html_str += '<img class="card-img-top" alt="delGcox_dist" src="delGcox_dist.png" style="height: 225px; width: 100%; display: block;">'
         html_str += '<div class="card-body">'
         html_str += '<p class="card-text">Gibbs free energy change for an electron donor half reaction</p>'
         html_str += '<div class="d-flex justify-content-between align-items-center">'

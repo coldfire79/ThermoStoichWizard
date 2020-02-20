@@ -64,7 +64,7 @@ class FTICRResult(object):
             return mf
         tbl[CHEMICAL_ELEMENTS] = tbl[CHEMICAL_ELEMENTS].astype(np.int)
         tbl['mf'] = tbl.apply(assign_formula, axis=1)
-        tbl['cpd_id'] = ['cpd__{}'.format(i) for i in range(tbl.shape[0])]
+        tbl['cpd_id'] = ['xcpd__{}'.format(i) for i in range(tbl.shape[0])]
         tbl = tbl.set_index('cpd_id')
         
         # filter out unassigned peaks
@@ -173,14 +173,14 @@ class FTICRResult(object):
         
         reactions = []
         for i, eq in enumerate(stoich_mat.apply(generate_equation, axis=1).tolist()):
-            reactions.append({'id':'rxn{}_c0'.format(i+1),'equation':eq})
+            reactions.append({'id':'xrxn{}_c0'.format(i+1),'equation':eq})
         
         rxn_df = pd.DataFrame(reactions,columns=rxn_cols)
         rxn_df.to_csv(fout, sep='\t', index=False)
 
     def create_media_file(self, media_file):
         media_cols = ['compounds','name','formula','minFlux','maxFlux','concentration']
-        media_compounds = [{'id':_id,'formula':self.id2mf[_id],'name':self.id2mf[_id],'minFlux':-1000,'maxFlux':1000,'concentration':1} for _id in self.id2mf]
+        media_compounds = [{'compounds':_id,'formula':self.id2mf[_id],'name':self.id2mf[_id],'minFlux':-1000,'maxFlux':1000,'concentration':1} for _id in self.id2mf]
         media_df = pd.DataFrame(media_compounds, columns=media_cols)
         media_df.to_csv(media_file, sep='\t', index=False)
 
