@@ -128,7 +128,7 @@ class ThermoStoichWizard:
                 compounds_file=os.path.join(self.shared_folder, "temp_comps.tsv"),
                 reactions_file=os.path.join(self.shared_folder, "temp_{}.tsv".format(stoich)))
             objects_created.append({'ref': fba_model_wref['ref'],
-                'description': "FBA model for ".format(stoich)})
+                'description': "FBA model for {}".format(stoich)})
         #######################################################################
         #  create the tsv files for media
         #######################################################################

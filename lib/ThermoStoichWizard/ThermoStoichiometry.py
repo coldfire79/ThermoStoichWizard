@@ -281,9 +281,9 @@ class ThermoStoichiometry(object):
     def get_stoich_electron_acceptor(self):
         stoich_electron_acceptor = np.zeros(10)
         stoich_electron_acceptor[8] = -1  # oxygen
-        stoich_electron_acceptor[6] = -4  #  h+
-        stoich_electron_acceptor[7] = -4  #  e-
-        stoich_electron_acceptor[1] = 2  #  h2o
+        stoich_electron_acceptor[6] = -4  # h+
+        stoich_electron_acceptor[7] = -4  # e-
+        stoich_electron_acceptor[1] =  2  # h2o
         return stoich_electron_acceptor
 
     def get_stoich_catabolic_reaciton(self, stoich_electron_donor, stoich_electron_acceptor):
