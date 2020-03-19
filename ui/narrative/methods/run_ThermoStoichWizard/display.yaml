@@ -1,7 +1,7 @@
 #
 # define display information
 #
-name: Thermo Stoichiometry Wizard
+name: Build Biogeochemical Reaction Models From Chemical Formulas
 
 tooltip: |
     Extract the thermodynamic stoichiometry from the chemical compositions
