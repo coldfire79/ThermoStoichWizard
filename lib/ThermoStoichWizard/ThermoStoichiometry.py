@@ -147,7 +147,7 @@ class FTICRResult(object):
         compounds.append({'id':'h_c0','formula':'H'})
         compounds.append({'id':'e_c0','formula':'e-'})
         compounds.append({'id':'acceptor_c0','formula':'O2'})
-        compounds.append({'id':'biom_c0','formula':'CH1p8N0p2O0p5'})
+        compounds.append({'id':'biom_c0','formula':'CH1.8N0.2O0.5'})
         comp_df = pd.DataFrame(compounds, columns=comp_cols)
         comp_df.to_csv(fout, sep='\t', index=False)
 
@@ -166,9 +166,9 @@ class FTICRResult(object):
 
                 if r[col] == 0: continue
                 elif r[col] > 0:
-                    reactants.append('({0})  {1}[c0]'.format(r[col], name))
+                    products.append('({0})  {1}[c0]'.format(r[col], name))
                 else:
-                    products.append('({0})  {1}[c0]'.format(-r[col], name))
+                    reactants.append('({0})  {1}[c0]'.format(-r[col], name))
             return '{} <=> {}'.format(' + '.join(reactants), ' + '.join(products))
         
         reactions = []
