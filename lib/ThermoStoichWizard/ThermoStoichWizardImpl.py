@@ -109,12 +109,12 @@ class ThermoStoichWizard:
         fbaobj = fba_tools(self.callback_url)
         def generate_fbamodel(fbaobj, fticr, model_prefix, workspace_name, compounds_file, reactions_file):
             fba_param = {
-                # 'model_name':'model' + uuid_string,
+                # 'model_name':'model' + params['output_surfix'],
                 'file_type':'tsv',
                 'compounds_file':{'path': compounds_file},
                 'model_file':{'path': reactions_file},
                 'biomass':['xrxn1_c0'],  # TODO: how to define a biomass reaction
-                'model_name': "Thermo_{}_{}".format(model_prefix, uuid_string),
+                'model_name': "Thermo_{}_{}".format(model_prefix, params['output_surfix']),
                 'workspace_name': workspace_name # 
             }
             fba_model_wref = fbaobj.tsv_file_to_model(p=fba_param)
@@ -140,7 +140,7 @@ class ThermoStoichWizard:
         media_param = {
             'file_type':'tsv',
             'media_file':{'path': media_tsv_file},
-            'media_name': "ThermoStoic_media_{}".format(uuid_string),
+            'media_name': "ThermoStoic_media_{}".format(params['output_surfix']),
             'workspace_name': params['workspace_name']
         }
         media_wref = fbaobj.tsv_file_to_media(p=media_param)
@@ -283,7 +283,7 @@ class ThermoStoichWizard:
             'file_links': output_files,
             'html_links': [html_dir],
             'direct_html_link_index': 0,
-            'report_object_name': 'thermo_stoich_wizard_report_' + uuid_string,
+            'report_object_name': 'thermo_stoich_wizard_report_' + params['output_surfix'],
             'workspace_name': params['workspace_name']
         })
         # report_info = report.create({'report': {'objects_created':[],

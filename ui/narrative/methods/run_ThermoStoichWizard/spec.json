@@ -18,6 +18,18 @@
             "default_values" : [ "" ],
             "field_type" : "text",
             "text_options" : { "valid_ws_types": ["KBaseExperiments.AttributeMapping"] }
+        },
+        {
+          "id" : "output_surfix",
+          "optional" : false,
+          "advanced" : false,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "text",
+          "text_options" : {
+            "valid_ws_types": [ ],
+            "is_output_name" : true
+          }
         }
     ],
     "behavior": {
@@ -36,6 +48,9 @@
                     "input_parameter": "input_tbl",
                     "target_property": "input_tbl",
                     "target_type_transform": "resolved-ref"
+                },{
+                    "input_parameter": "output_surfix",
+                    "target_property": "output_surfix"
                 }
             ],
             "output_mapping": [

@@ -4,7 +4,7 @@
 name: Build Biogeochemical Reaction Models From Chemical Formulas
 
 tooltip: |
-    Extract the thermodynamic stoichiometry from the chemical compositions
+    Build biogeochemical reaction models from the chemical compositions
 
 screenshots: []
 
@@ -32,6 +32,14 @@ parameters :
         long-hint  : |
             FT-ICR Data imported to KBaseExperiments.AttributeMapping format. It should contain the molecular fomular and concentrations.
 
+    output_surfix :
+        ui-name : |
+            Surfix for output objects
+        short-hint : |
+            The surfix string for the output objects (FBA models and Media)
+        long-hint  : |
+            The surfix string for the output objects (FBA models and Media)
+
 description : |
-    <p>This KBase app is to extract the stoichiometry matrix from a given set of compounds.</p>
+    <p>This KBase app is to build the biogeochemical reaction models (stoichiometry matrices) from from a given set of compounds.</p>
 
