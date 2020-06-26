@@ -4,7 +4,7 @@
 name: Build Stoichiometric Reaction Models From Chemical Formulas
 
 tooltip: |
-    Build Stoichiometric reaction models from the chemical compositions
+    Build stoichiometric reaction models from the chemical compositions
 
 screenshots: []
 
@@ -32,6 +32,22 @@ parameters :
         long-hint  : |
             FT-ICR Data imported to KBaseExperiments.AttributeMapping format. It should contain the molecular fomular and concentrations.
 
+    n_lambda_bins :
+        ui-name : |
+            The number of lambda bins
+        short-hint : |
+            The number of lambda bins to sample reactions
+        long-hint  : |
+            The number of lambda bins to sample reactions
+
+    lambda_cutoff :
+        ui-name : |
+            The cutoff % in the lambda distribution
+        short-hint : |
+            The cutoff % of the tails in the lambda distribution
+        long-hint  : |
+            The cutoff % of the tails in the lambda distribution
+    
     output_surfix :
         ui-name : |
             Surfix for output objects
@@ -41,5 +57,5 @@ parameters :
             The surfix string for the output objects (FBA models and Media)
 
 description : |
-    <p>This KBase app is to build the biogeochemical reaction models (stoichiometry matrices) from from a given set of compounds.</p>
+    <p>This KBase app is to build the stoichiometric reaction models (stoichiometry matrices) from from a given set of compounds.</p>
 

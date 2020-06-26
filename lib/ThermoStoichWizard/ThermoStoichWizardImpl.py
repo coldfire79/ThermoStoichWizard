@@ -66,6 +66,10 @@ class ThermoStoichWizard:
         uuid_string = str(uuid.uuid4())
         objects_created = []
         output_files = []
+
+        n_lambda_bins = int(params['n_lambda_bins'])
+        lambda_cutoff = float(params['lambda_cutoff'])
+
         
         #######################################################################
         #  check out the input table
@@ -105,7 +109,7 @@ class ThermoStoichWizard:
         #######################################################################
         #  average compositions by lambda bins
         #######################################################################
-        new_comp = fticr.average_by_lambda_bins(n_bins=10, cutoff=5)
+        new_comp = fticr.average_by_lambda_bins(n_bins=n_lambda_bins, cutoff=lambda_cutoff)
         average_comp_path = os.path.join(output_folder, "avg_comp_from_lambda_bins.csv")
         new_comp.to_csv(average_comp_path)
 
