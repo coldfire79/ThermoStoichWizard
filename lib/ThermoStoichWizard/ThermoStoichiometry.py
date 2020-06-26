@@ -255,7 +255,7 @@ class FTICRResult(object):
 
         # binning
         bins = np.linspace(lambda_min, lambda_max, n_bins+1)
-        labels = ['Bin{}'.format(i) for i in range(10)]
+        labels = ['Bin{}'.format(i) for i in range(n_bins)]
         comp_df['Class'] = pd.cut(comp_df['lambda'], bins=bins, labels=labels)
         tdf = comp_df[comp_df['Class'].notnull()]
 
