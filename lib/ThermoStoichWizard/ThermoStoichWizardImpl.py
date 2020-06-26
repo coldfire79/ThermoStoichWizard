@@ -3,6 +3,7 @@
 import logging
 import os
 import uuid
+import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -113,38 +114,61 @@ class ThermoStoichWizard:
                             'label': 'average compositions for each lambda bin',
                             'description': 'average compositions for each lambda bin'})
 
-        # #######################################################################
-        # #  create the tsv files for fba
-        # #######################################################################
-        # fticr.create_fba_model_files(self.shared_folder)
+        # compute the reactions for selected compositions
+        new_fticr = FTICRResult(new_comp, dtype=np.float)
 
-        # #######################################################################
-        # #  generate fbamodel
-        # #######################################################################
-        # fbaobj = fba_tools(self.callback_url)
-        # def generate_fbamodel(fbaobj, fticr, model_prefix, workspace_name, compounds_file, reactions_file):
-        #     fba_param = {
-        #         # 'model_name':'model' + params['output_surfix'],
-        #         'file_type':'tsv',
-        #         'compounds_file':{'path': compounds_file},
-        #         'model_file':{'path': reactions_file},
-        #         'biomass':['xrxn1_c0'],  # TODO: how to define a biomass reaction
-        #         'model_name': "{}_{}".format(model_prefix, params['output_surfix']),
-        #         'workspace_name': workspace_name # 
-        #     }
-        #     fba_model_wref = fbaobj.tsv_file_to_model(p=fba_param)
-        #     print('fba_model:', fba_model_wref)
-        #     return fba_model_wref
+        new_fticr.run()
+        selected_folder = os.path.join(self.shared_folder, 'selected')
+        os.mkdir(selected_folder)
+        new_fticr.save_result_files(selected_folder)
+        output_filenames = ["stoichMet_O2"]
+        output_files += [{
+            'path': selected_folder+'/{}.csv'.format(n),
+            'name': '{}_from_lambda_bins.csv'.format(n),
+            'label': '{}_from_lambda_bins'.format(n),
+            'description': '{}_from_lambda_bins'.format(n),
+        } for n in output_filenames]
 
-        # # stoichiometries = ["stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3"]
-        # stoichiometries = ["stoichMet_O2"]
-        # for stoich in stoichiometries:
-        #     fba_model_wref = generate_fbamodel(fbaobj, fticr, model_prefix=stoich,
-        #         workspace_name=params['workspace_name'],
-        #         compounds_file=os.path.join(self.shared_folder, "temp_comps.tsv"),
-        #         reactions_file=os.path.join(self.shared_folder, "temp_{}.tsv".format(stoich)))
-        #     objects_created.append({'ref': fba_model_wref['ref'],
-        #         'description': "FBA model for {}".format(stoich)})
+        #######################################################################
+        #  create the tsv files for fba
+        #######################################################################
+        fticr.create_fba_model_files(self.shared_folder)
+        new_fticr.create_fba_model_files(self.shared_folder, prefix='selected')
+
+        #######################################################################
+        #  generate fbamodel
+        #######################################################################
+        fbaobj = fba_tools(self.callback_url)
+        def generate_fbamodel(fbaobj, model_prefix, workspace_name, compounds_file, reactions_file):
+            fba_param = {
+                # 'model_name':'model' + params['output_surfix'],
+                'file_type':'tsv',
+                'compounds_file':{'path': compounds_file},
+                'model_file':{'path': reactions_file},
+                'biomass':['xrxn1_c0'],  # TODO: how to define a biomass reaction
+                'model_name': "{}_{}".format(model_prefix, params['output_surfix']),
+                'workspace_name': workspace_name # 
+            }
+            fba_model_wref = fbaobj.tsv_file_to_model(p=fba_param)
+            print('fba_model:', fba_model_wref)
+            return fba_model_wref
+
+        # stoichiometries = ["stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3"]
+        stoichiometries = ["stoichMet_O2"]
+        for stoich in stoichiometries:
+            fba_model_wref = generate_fbamodel(fbaobj, model_prefix=stoich,
+                workspace_name=params['workspace_name'],
+                compounds_file=os.path.join(self.shared_folder, "temp_comps.tsv"),
+                reactions_file=os.path.join(self.shared_folder, "temp_{}.tsv".format(stoich)))
+            objects_created.append({'ref': fba_model_wref['ref'],
+                'description': "FBA model for {}".format(stoich)})
+
+            fba_model_wref = generate_fbamodel(fbaobj, model_prefix="Selected_"+stoich,
+                workspace_name=params['workspace_name'],
+                compounds_file=os.path.join(self.shared_folder, "selected_comps.tsv"),
+                reactions_file=os.path.join(self.shared_folder, "selected_{}.tsv".format(stoich)))
+            objects_created.append({'ref': fba_model_wref['ref'],
+                'description': "FBA model for {}".format(stoich)})
         #######################################################################
         #  create the tsv files for media
         #######################################################################

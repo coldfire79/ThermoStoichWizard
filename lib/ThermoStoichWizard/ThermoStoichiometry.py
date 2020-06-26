@@ -13,15 +13,17 @@ import os
 
 # CHNOPS chemical elements
 CHEMICAL_ELEMENTS = ["C","H","N","O","P","S"]
-REQUIRED_COLUMNS = CHEMICAL_ELEMENTS+['Candidates']
+# TODO: how to use Candidates
+REQUIRED_COLUMNS = CHEMICAL_ELEMENTS#+['Candidates']
 
 class FTICRResult(object):
     """FTICR Result"""
-    def __init__(self, tbl):
+    def __init__(self, tbl, dtype=np.int):
         super(FTICRResult, self).__init__()
         if self.isvalid(tbl):
-            self.tbl = tbl
-            self._assigned_tbl = self._filter(tbl)
+            # drop the peaks with the same compositions
+            self.tbl = tbl.drop_duplicates(subset=CHEMICAL_ELEMENTS+['Na','C13'])
+            self._assigned_tbl = self._filter(tbl, dtype=dtype)
 
             # mapping table: cpd id and molecular formula (unique)
             self.id2mf = self._assigned_tbl.mf.to_dict()
@@ -50,9 +52,10 @@ class FTICRResult(object):
         isvalid = np.sum([c not in tbl.columns for c in REQUIRED_COLUMNS])==0
         return isvalid
 
-    def _filter(self, tbl):
+    def _filter(self, tbl, dtype=np.int):
         '''filter out unassigned peaks and assign formulas
             TODO: how to deal with C13 and Na
+            TODO: how to deal with the duplicated mf
         '''
         # assign formulas
         def assign_formula(row):
@@ -62,7 +65,7 @@ class FTICRResult(object):
                     if row[ele]==1: mf += ele
                     else: mf += ele+str(row[ele])
             return mf
-        tbl[CHEMICAL_ELEMENTS] = tbl[CHEMICAL_ELEMENTS].astype(np.int)
+        tbl[CHEMICAL_ELEMENTS] = tbl[CHEMICAL_ELEMENTS].astype(dtype)
         tbl['mf'] = tbl.apply(assign_formula, axis=1)
         tbl['cpd_id'] = ['xcpd__{}'.format(i) for i in range(tbl.shape[0])]
         tbl = tbl.set_index('cpd_id')
@@ -125,15 +128,15 @@ class FTICRResult(object):
         self.stoichMet_HCO3.to_csv(folder+'/stoichMet_HCO3.csv')
         self.thermo.to_csv(folder+'/thermodynamic_props.csv')
     
-    def create_fba_model_files(self, folder):
-        compounds_file = os.path.join(folder, "temp_comps.tsv")
+    def create_fba_model_files(self, folder, prefix='temp'):
+        compounds_file = os.path.join(folder, "{}_comps.tsv".format(prefix))
         self.create_cpd_file_fba_model(compounds_file)
         # self.create_rxn_file_fba_model(self.stoichD, os.path.join(folder, "temp_stoichD.tsv"))
         # self.create_rxn_file_fba_model(self.stoichA, os.path.join(folder, "temp_stoichA.tsv"))
         # self.create_rxn_file_fba_model(self.stoichCat, os.path.join(folder, "temp_stoichCat.tsv"))
         # self.create_rxn_file_fba_model(self.stoichAn_O2, os.path.join(folder, "temp_stoichAn_O2.tsv"))
         # self.create_rxn_file_fba_model(self.stoichAn_HCO3, os.path.join(folder, "temp_stoichAn_HCO3.tsv"))
-        self.create_rxn_file_fba_model(self.stoichMet_O2, os.path.join(folder, "temp_stoichMet_O2.tsv"))
+        self.create_rxn_file_fba_model(self.stoichMet_O2, os.path.join(folder, "{}_stoichMet_O2.tsv".format(prefix)))
         # self.create_rxn_file_fba_model(self.stoichMet_HCO3, os.path.join(folder, "temp_stoichMet_HCO3.tsv"))
 
     def create_cpd_file_fba_model(self, fout):
@@ -257,6 +260,8 @@ class FTICRResult(object):
         tdf = comp_df[comp_df['Class'].notnull()]
 
         new_comp = tdf.groupby('Class').mean()
+        new_comp['Na'] = 0
+        new_comp['C13'] = 0
 
         return new_comp.reset_index()
 
