@@ -1,10 +1,10 @@
 #
 # define display information
 #
-name: Build Biogeochemical Reaction Models From Chemical Formulas
+name: Build Stoichiometric Reaction Models From Chemical Formulas
 
 tooltip: |
-    Build biogeochemical reaction models from the chemical compositions
+    Build Stoichiometric reaction models from the chemical compositions
 
 screenshots: []
 
@@ -13,12 +13,12 @@ icon: icon.png
 #
 # define a set of similar apps that might be useful to the user
 #
-suggestions:
-    apps:
-        related:
-            [app1, app2]
-        next:
-            [app3, app4]
+# suggestions:
+#     apps:
+#         related:
+#             [app1, app2]
+#         next:
+#             [app3, app4]
 
 #
 # Configure the display and description of parameters

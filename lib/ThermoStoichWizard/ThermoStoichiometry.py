@@ -128,13 +128,13 @@ class FTICRResult(object):
     def create_fba_model_files(self, folder):
         compounds_file = os.path.join(folder, "temp_comps.tsv")
         self.create_cpd_file_fba_model(compounds_file)
-        self.create_rxn_file_fba_model(self.stoichD, os.path.join(folder, "temp_stoichD.tsv"))
-        self.create_rxn_file_fba_model(self.stoichA, os.path.join(folder, "temp_stoichA.tsv"))
-        self.create_rxn_file_fba_model(self.stoichCat, os.path.join(folder, "temp_stoichCat.tsv"))
-        self.create_rxn_file_fba_model(self.stoichAn_O2, os.path.join(folder, "temp_stoichAn_O2.tsv"))
-        self.create_rxn_file_fba_model(self.stoichAn_HCO3, os.path.join(folder, "temp_stoichAn_HCO3.tsv"))
+        # self.create_rxn_file_fba_model(self.stoichD, os.path.join(folder, "temp_stoichD.tsv"))
+        # self.create_rxn_file_fba_model(self.stoichA, os.path.join(folder, "temp_stoichA.tsv"))
+        # self.create_rxn_file_fba_model(self.stoichCat, os.path.join(folder, "temp_stoichCat.tsv"))
+        # self.create_rxn_file_fba_model(self.stoichAn_O2, os.path.join(folder, "temp_stoichAn_O2.tsv"))
+        # self.create_rxn_file_fba_model(self.stoichAn_HCO3, os.path.join(folder, "temp_stoichAn_HCO3.tsv"))
         self.create_rxn_file_fba_model(self.stoichMet_O2, os.path.join(folder, "temp_stoichMet_O2.tsv"))
-        self.create_rxn_file_fba_model(self.stoichMet_HCO3, os.path.join(folder, "temp_stoichMet_HCO3.tsv"))
+        # self.create_rxn_file_fba_model(self.stoichMet_HCO3, os.path.join(folder, "temp_stoichMet_HCO3.tsv"))
 
     def create_cpd_file_fba_model(self, fout):
         comp_cols = ['id','name','formula','charge','inchikey','smiles','deltag','kegg id','ms id']
@@ -188,9 +188,10 @@ class FTICRResult(object):
         if self.thermo is not None:
             plt.close('all')
             g = sns.distplot(self.thermo.lambda_O2, label='O2')
-            g = sns.distplot(self.thermo.lambda_HCO3, label='HCO3')
+            # g = sns.distplot(self.thermo.lambda_HCO3, label='HCO3')
             plt.xlabel(r'$\lambda$', fontsize=15)
             plt.ylabel('Distribution', fontsize=15)
+            plt.xlim([0,0.3])
             plt.legend(fontsize=15)
             plt.tight_layout()
             if fout: plt.savefig(fout)
@@ -208,7 +209,58 @@ class FTICRResult(object):
             if fout: plt.savefig(fout)
         else:
             print('[Warning] "plot_lambda_dist" requires self.thermo. Please use run().')
+
+    def get_summary(self, colname):
+        if self.thermo is not None:
+            return (self.thermo[colname].mean(),
+                    self.thermo[colname].std(ddof=1),
+                    self.thermo[colname].median())
+        else:
+            print('[Warning] "plot_lambda_dist" requires self.thermo. Please use run().')
+            return (np.nan, np.nan, np.nan)
+
+    def plot_van_krevelen(self, fout):
+        df = self._assigned_tbl.copy()
+        plt.figure(figsize=(10,8))
+        df["H:C"] = df.H / df.C
+        df["O:C"] = df.O / df.C
+
+        g = sns.scatterplot("O:C", "H:C", hue="Class", alpha=1, s=15, data=df)
+        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+        plt.tight_layout()
         
+        plt.savefig(fout)
+        
+    def average_by_lambda_bins(self, n_bins=10, cutoff=5):
+        '''
+        average compositions per each bin in the lambda distribution after 
+        filtering out the two-side tails by a cutoff percent (%)
+        '''
+        assert 0 < cutoff < 100, "cutoff must be 0 < cutoff < 100"
+        assert 0 < n_bins, "n_bins must be 0 < n_bins"
+
+        # data
+        lambda_dist = self.thermo.lambda_O2.values
+        comp_df = self._assigned_tbl[REQUIRED_COLUMNS].copy()
+        # th_lambda[0] --> lambda_O2
+        comp_df['lambda'] = comp_df.apply(lambda x: self.all_stoich[x.name].th_lambda[0], axis=1)
+
+        # get the boundary
+        lambda_min = np.percentile(lambda_dist, cutoff)
+        lambda_max = np.percentile(lambda_dist, 100-cutoff)
+        print('lambda_min', lambda_min, 'lambda_max', lambda_max)
+
+        # binning
+        bins = np.linspace(lambda_min, lambda_max, n_bins+1)
+        labels = ['Bin{}'.format(i) for i in range(10)]
+        comp_df['Class'] = pd.cut(comp_df['lambda'], bins=bins, labels=labels)
+        tdf = comp_df[comp_df['Class'].notnull()]
+
+        new_comp = tdf.groupby('Class').mean()
+
+        return new_comp.reset_index()
+
+
 
 class ThermoStoichiometry(object):
     """extract thermo stoichiometry from a chemical formula"""
