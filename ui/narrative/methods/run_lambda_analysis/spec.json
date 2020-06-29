@@ -1,0 +1,63 @@
+{
+    "ver": "0.0.1",
+    "authors": [
+        "coldfire"
+    ],
+    "contact": "",
+    "categories": ["active"],
+    "widgets": {
+        "input": null,
+        "output" : "no-display"
+    },
+    "parameters": [ 
+        {
+            "id": "lambda_tbl",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text",
+            "text_options" : { "valid_ws_types": ["KBaseExperiments.AttributeMapping"] }
+        },
+        {
+            "id": "stoich_tbl",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text",
+            "text_options" : { "valid_ws_types": ["KBaseExperiments.AttributeMapping"] }
+        }
+    ],
+    "behavior": {
+        "service-mapping": {
+            "url": "",
+            "name": "ThermoStoichWizard",
+            "method": "run_lambda_analysis",
+            "input_mapping": [
+                {
+                    "narrative_system_variable": "workspace",
+                    "target_property": "workspace_name"
+                },{
+                    "input_parameter": "lambda_tbl",
+                    "target_property": "lambda_tbl",
+                    "target_type_transform": "resolved-ref"
+                },{
+                    "input_parameter": "stoich_tbl",
+                    "target_property": "stoich_tbl",
+                    "target_type_transform": "resolved-ref"
+                }
+            ],
+            "output_mapping": [
+                {
+                    "service_method_output_path": [0,"report_name"],
+                    "target_property": "report_name"
+                },{
+                    "service_method_output_path": [0,"report_ref"],
+                    "target_property": "report_ref"
+                }
+            ]
+        }
+    },
+    "job_id_output_field": "docker"
+}

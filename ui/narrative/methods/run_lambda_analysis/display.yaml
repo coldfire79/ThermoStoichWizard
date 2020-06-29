@@ -1,0 +1,44 @@
+#
+# define display information
+#
+name: Run Lambda Analysis
+
+tooltip: |
+    Perform lambda analysis
+
+screenshots: []
+
+icon: icon.png
+
+#
+# define a set of similar apps that might be useful to the user
+#
+# suggestions:
+#     apps:
+#         related:
+#             [app1, app2]
+#         next:
+#             [app3, app4]
+
+#
+# Configure the display and description of parameters
+#
+parameters :
+    lambda_tbl :
+        ui-name : |
+            Lambda result
+        short-hint : |
+            Lambda result
+        long-hint  : |
+            Lambda result
+
+    stoich_tbl :
+        ui-name : |
+            Stoichiometry matrix
+        short-hint : |
+            Stoichiometry matrix
+        long-hint  : |
+            Stoichiometry matrix
+
+description : |
+    This app is to analyze the lambda output

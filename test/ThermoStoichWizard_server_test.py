@@ -69,27 +69,25 @@ class ThermoStoichWizardTest(unittest.TestCase):
         ########################################################################
         # get the example data object in the narrative
         ########################################################################
+        # params={
+        #     'workspace_name': self.wsName,
+        #     "input_tbl": "37627/20/2",
+        #     "n_lambda_bins": "10",
+        #     "lambda_cutoff": "5",
+        #     "output_surfix": "Test"
+        # }
+        # ########################################################################
+        # ret = self.serviceImpl.run_ThermoStoichWizard(self.ctx, params)
         
-
-        # ########################################################################
-        # # make a copy
-        # ########################################################################
-        # # dump tbl
-        # # in the docker image
-        # file = open('/kb/module/work/tbl_peak.pkl', 'wb')
-
-        # # dump information to that file
-        # pickle.dump(input_tbl, file)
-
-        # # close the file
-        # file.close()
-
+        ########################################################################
+        # test run_lambda_analysis
+        ########################################################################
         params={
             'workspace_name': self.wsName,
-            "input_tbl": "37627/20/2",
-            "n_lambda_bins": "10",
-            "lambda_cutoff": "5",
-            "output_surfix": "Test"
+            "lambda_tbl": "39537/21/1",
+            "stoich_tbl": "39537/22/1",
+            "vh_cs": "0.2,0.5,1",
+            "vh_o2": "0.2,0.5,1"
         }
         ########################################################################
-        ret = self.serviceImpl.run_ThermoStoichWizard(self.ctx, params)
+        ret = self.serviceImpl.run_lambda_analysis(self.ctx, params)

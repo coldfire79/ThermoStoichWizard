@@ -14,6 +14,7 @@ from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.fba_toolsClient import fba_tools
 
 from ThermoStoichWizard.ThermoStoichiometry import ThermoStoichiometry, FTICRResult
+from ThermoStoichWizard.LambdaAnalysis import LambdaAnalysis
 
 #END_HEADER
 
@@ -44,10 +45,13 @@ class ThermoStoichWizard:
     # be found
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
+        self.config = config
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.shared_folder = os.path.abspath(config['scratch'])
         logging.basicConfig(format='%(created)s %(levelname)s: %(message)s',
                             level=logging.INFO)
+
+        self.lambda_analysis = LambdaAnalysis(self.config)
         #END_CONSTRUCTOR
         pass
 
@@ -326,6 +330,27 @@ class ThermoStoichWizard:
                              'output is not type dict as required.')
         # return the results
         return [output]
+
+    def run_lambda_analysis(self, ctx, params):
+        """
+        This example function accepts any number of parameters and returns results in a KBaseReport
+        :param params: instance of mapping from String to unspecified object
+        :returns: instance of type "ReportResults" -> structure: parameter
+           "report_name" of String, parameter "report_ref" of String
+        """
+        # ctx is the context object
+        # return variables are: output
+        #BEGIN run_lambda_analysis
+        output = self.lambda_analysis.run(params)
+        #END run_lambda_analysis
+
+        # At some point might do deeper type checking...
+        if not isinstance(output, dict):
+            raise ValueError('Method run_lambda_analysis return value ' +
+                             'output is not type dict as required.')
+        # return the results
+        return [output]
+
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
