@@ -40,5 +40,21 @@ parameters :
         long-hint  : |
             Stoichiometry matrix
 
+    vh_cs :
+        ui-name : |
+            Vh[Cs]
+        short-hint : |
+            Vh[Cs] (Comma separated)
+        long-hint  : |
+            Vh[Cs] (Comma separated)
+
+    vh_o2 :
+        ui-name : |
+            Vh[O2]
+        short-hint : |
+            Vh[O2] (Comma separated)
+        long-hint  : |
+            Vh[O2] (Comma separated)
+
 description : |
     This app is to analyze the lambda output
