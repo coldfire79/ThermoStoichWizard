@@ -190,7 +190,7 @@ class FTICRResult(object):
     def plot_lambda_dist(self, fout='lambda_dist.png'):
         if self.thermo is not None:
             plt.close('all')
-            g = sns.distplot(self.thermo.lambda_O2, label='O2')
+            g = sns.distplot(self.thermo.lambda_O2, label=r'$\lambda$')
             # g = sns.distplot(self.thermo.lambda_HCO3, label='HCO3')
             plt.xlabel(r'$\lambda$', fontsize=15)
             plt.ylabel('Distribution', fontsize=15)
