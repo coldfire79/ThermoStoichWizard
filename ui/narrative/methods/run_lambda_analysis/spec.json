@@ -27,6 +27,24 @@
             "default_values" : [ "" ],
             "field_type" : "text",
             "text_options" : { "valid_ws_types": ["KBaseExperiments.AttributeMapping"] }
+        },
+        {
+            "id": "vh_o2",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text",
+            "text_options" : { "valid_ws_types": [ ] }
+        },
+        {
+            "id": "vh_cs",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text",
+            "text_options" : { "valid_ws_types": [ ] }
         }
     ],
     "behavior": {
@@ -46,6 +64,12 @@
                     "input_parameter": "stoich_tbl",
                     "target_property": "stoich_tbl",
                     "target_type_transform": "resolved-ref"
+                },{
+                    "input_parameter": "vh_cs",
+                    "target_property": "vh_cs"
+                },{
+                    "input_parameter": "vh_o2",
+                    "target_property": "vh_o2"
                 }
             ],
             "output_mapping": [
