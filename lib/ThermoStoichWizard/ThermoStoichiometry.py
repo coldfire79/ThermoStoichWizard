@@ -239,7 +239,7 @@ class FTICRResult(object):
         average compositions per each bin in the lambda distribution after 
         filtering out the two-side tails by a cutoff percent (%)
         '''
-        assert 0 < cutoff < 100, "cutoff must be 0 < cutoff < 100"
+        assert 0 <= cutoff < 100, "cutoff must be 0 <= cutoff < 100"
         assert 0 < n_bins, "n_bins must be 0 < n_bins"
 
         # data
@@ -249,8 +249,12 @@ class FTICRResult(object):
         comp_df['lambda'] = comp_df.apply(lambda x: self.all_stoich[x.name].th_lambda[0], axis=1)
 
         # get the boundary
-        lambda_min = np.percentile(lambda_dist, cutoff)
-        lambda_max = np.percentile(lambda_dist, 100-cutoff)
+        if cutoff > 0:
+            lambda_min = np.percentile(lambda_dist, cutoff)
+            lambda_max = np.percentile(lambda_dist, 100-cutoff)
+        elif cutoff == 0:
+            lambda_min = 0
+            lambda_max = np.amax(lambda_dist)
         print('lambda_min', lambda_min, 'lambda_max', lambda_max)
 
         # binning
