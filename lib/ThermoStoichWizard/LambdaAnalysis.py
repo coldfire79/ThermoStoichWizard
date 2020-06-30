@@ -59,7 +59,7 @@ class LambdaAnalysis(object):
                 # corr_mats['r_lambda_rhco3'][i,j] = r_lambda_rhco3[0]
 
                 vis_content += '<div>'
-                vis_content += '<h3>Vh[Cs]={:.2f}, Vh[O2]={:.2f}<h4>'.format(vhcs, vho2)
+                vis_content += '<h3>V<sub>h</sub>[OC]={:.2f}, V<sub>h</sub>[O<sub>2</sub>]={:.2f}<h4>'.format(vhcs, vho2)
                 vis_content += '<img alt="{0}" src="{0}" style="width: 100%; display: block;">'.format(fout)
                 vis_content += '</div>'
 
@@ -72,7 +72,7 @@ class LambdaAnalysis(object):
             tdf = pd.DataFrame(corr_mats[corr], columns=vh_cs)
             tdf.index = vh_o2
             sns.heatmap(tdf, center=0, cmap="RdBu_r", annot=True, fmt=".2f", ax=ax)
-            ax.set_xlabel(r"$V_h[C_s]$")
+            ax.set_xlabel(r"$V_h[OC]$")
             ax.set_ylabel(r"$V_h[O_2]$")
 
             # print(i)

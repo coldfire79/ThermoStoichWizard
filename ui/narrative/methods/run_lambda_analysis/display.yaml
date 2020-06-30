@@ -42,19 +42,19 @@ parameters :
 
     vh_cs :
         ui-name : |
-            Vh[Cs] [mol]
+            V<sub>h</sub>[OC] [mol]
         short-hint : |
-            Vh[Cs] [mol] (Comma separated)
+            V<sub>h</sub>[OC] [mol] (Comma separated)
         long-hint  : |
-            Vh[Cs] [mol] (Comma separated)
+            V<sub>h</sub>[OC] [mol] (Comma separated)
 
     vh_o2 :
         ui-name : |
-            Vh[O2] [mol]
+            V<sub>h</sub>[O<sub>2</sub>] [mol]
         short-hint : |
-            Vh[O2] [mol] (Comma separated)
+            V<sub>h</sub>[O<sub>2</sub>] [mol] (Comma separated)
         long-hint  : |
-            Vh[O2] [mol] (Comma separated)
+            V<sub>h</sub>[O<sub>2</sub>] [mol] (Comma separated)
 
 description : |
     This app is to analyze the lambda output
