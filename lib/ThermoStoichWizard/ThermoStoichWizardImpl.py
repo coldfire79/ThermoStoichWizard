@@ -122,11 +122,11 @@ class ThermoStoichWizard:
                             'label': 'average compositions for each lambda bin',
                             'description': 'average compositions for each lambda bin'})
 
-        # compute the reactions for selected compositions
+        # compute the reactions for bin averaged compositions
         new_fticr = FTICRResult(new_comp, dtype=np.float)
 
         new_fticr.run()
-        selected_folder = os.path.join(self.shared_folder, 'selected')
+        selected_folder = os.path.join(self.shared_folder, 'bin_avg')
         os.mkdir(selected_folder)
         new_fticr.save_result_files(selected_folder)
         output_filenames = ["stoichMet_O2"]
@@ -141,7 +141,7 @@ class ThermoStoichWizard:
         #  create the tsv files for fba
         #######################################################################
         fticr.create_fba_model_files(self.shared_folder)
-        new_fticr.create_fba_model_files(self.shared_folder, prefix='selected')
+        new_fticr.create_fba_model_files(self.shared_folder, prefix='bin_avg')
 
         #######################################################################
         #  generate fbamodel
@@ -171,10 +171,10 @@ class ThermoStoichWizard:
             objects_created.append({'ref': fba_model_wref['ref'],
                 'description': "FBA model for {}".format(stoich)})
 
-            fba_model_wref = generate_fbamodel(fbaobj, model_prefix="Selected_"+stoich,
+            fba_model_wref = generate_fbamodel(fbaobj, model_prefix="Bin_Averaged_"+stoich,
                 workspace_name=params['workspace_name'],
-                compounds_file=os.path.join(self.shared_folder, "selected_comps.tsv"),
-                reactions_file=os.path.join(self.shared_folder, "selected_{}.tsv".format(stoich)))
+                compounds_file=os.path.join(self.shared_folder, "bin_avg_comps.tsv"),
+                reactions_file=os.path.join(self.shared_folder, "bin_avg_{}.tsv".format(stoich)))
             objects_created.append({'ref': fba_model_wref['ref'],
                 'description': "FBA model for {}".format(stoich)})
         #######################################################################

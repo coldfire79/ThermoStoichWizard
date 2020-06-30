@@ -36,7 +36,8 @@ class LambdaAnalysis(object):
 
         vis_content = ''
         X, Y = np.meshgrid(vh_cs, vh_o2)
-        corr_mats = {i:np.zeros(X.shape) for i in ['r_lambda_rbiom','r_lambda_ro2','r_lambda_rhco3']}
+        # corr_mats = {i:np.zeros(X.shape) for i in ['r_lambda_rbiom','r_lambda_ro2','r_lambda_rhco3']}
+        corr_mats = {i:np.zeros(X.shape) for i in ['r_lambda_rbiom','r_lambda_ro2']}
         print(corr_mats)
         for i in range(len(vh_cs)):
             for j in range(len(vh_o2)):
@@ -55,7 +56,7 @@ class LambdaAnalysis(object):
 
                 corr_mats['r_lambda_rbiom'][i,j] = r_lambda_rbiom[0]
                 corr_mats['r_lambda_ro2'][i,j] = r_lambda_ro2[0]
-                corr_mats['r_lambda_rhco3'][i,j] = r_lambda_rhco3[0]
+                # corr_mats['r_lambda_rhco3'][i,j] = r_lambda_rhco3[0]
 
                 vis_content += '<div>'
                 vis_content += '<h3>Vh[Cs]={:.2f}, Vh[O2]={:.2f}<h4>'.format(vhcs, vho2)
@@ -63,9 +64,9 @@ class LambdaAnalysis(object):
                 vis_content += '</div>'
 
         plt.close('all')
-        fig = plt.figure(figsize=(12,3))
-        for i, (corr, label) in enumerate(zip(['r_lambda_rbiom','r_lambda_ro2','r_lambda_rhco3'],
-                                     ["$r_{Biom}$","$r_{O_2}$","$r_{HCO_3^-}$"])):
+        fig = plt.figure(figsize=(9,3))
+        for i, (corr, label) in enumerate(zip(['r_lambda_rbiom','r_lambda_ro2'],
+                                              ["$r_{Biom}$","|$r_{O_2}$|"])):
             
             ax = fig.add_subplot(1, 3, i+1)
             tdf = pd.DataFrame(corr_mats[corr], columns=vh_cs)
@@ -89,7 +90,7 @@ class LambdaAnalysis(object):
             # ax.set_xlabel(r"$V_h[C_s]$")
             # ax.set_ylabel(r"$V_h[O_2]$")
             # ax.set_zlabel(r"$\rho$", rotation=180)
-            # ax.set_title(label)
+            ax.set_title(r"$\rho$($\lambda$," + label + ")")
 
             # fig.colorbar(surf, shrink=0.5, aspect=10)
 
@@ -151,26 +152,26 @@ class LambdaAnalysis(object):
 
         # print(r_lambda_rbiom, r_lambda_ro2, r_lambda_rhco3)
 
-        fig, ax = plt.subplots(2,3, figsize=(11,5))
+        fig, ax = plt.subplots(2,2, figsize=(8,5))
         sns.distplot(df['r_biom'], ax=ax[0,0])
         sns.distplot(df['r_o2'], ax=ax[0,1])
-        sns.distplot(df['r_hco3'], ax=ax[0,2])
+        # sns.distplot(df['r_hco3'], ax=ax[0,2])
         ax[0,0].set_xlabel(r"$r_{Biom}$")
-        ax[0,1].set_xlabel(r"$r_{O_2}$")
-        ax[0,2].set_xlabel(r"$r_{HCO_3^-}$")
+        ax[0,1].set_xlabel(r"|$r_{O_2}$|")
+        # ax[0,2].set_xlabel(r"$r_{HCO_3^-}$")
 
         sns.scatterplot(df['lambda_O2'], df['r_biom'], alpha=0.6, ax=ax[1,0])
         sns.scatterplot(df['lambda_O2'], df['r_o2'], alpha=0.6, ax=ax[1,1])
-        sns.scatterplot(df['lambda_O2'], df['r_hco3'], alpha=0.6, ax=ax[1,2])
+        # sns.scatterplot(df['lambda_O2'], df['r_hco3'], alpha=0.6, ax=ax[1,2])
         ax[1,0].set_ylabel(r"$r_{Biom}$")
-        ax[1,1].set_ylabel(r"$r_{O_2}$")
-        ax[1,2].set_ylabel(r"$r_{HCO_3^-}$")
+        ax[1,1].set_ylabel(r"|$r_{O_2}$|")
+        # ax[1,2].set_ylabel(r"$r_{HCO_3^-}$")
 
         ax[1,0].set_title(r"$\rho$={:.3f}".format(r_lambda_rbiom[0]))
         ax[1,1].set_title(r"$\rho$={:.3f}".format(r_lambda_ro2[0]))
-        ax[1,2].set_title(r"$\rho$={:.3f}".format(r_lambda_rhco3[0]))
+        # ax[1,2].set_title(r"$\rho$={:.3f}".format(r_lambda_rhco3[0]))
 
-        for i in range(3):
+        for i in range(2):
             ax[1,i].set_xlabel(r"$\lambda$")
             
         if fout:
