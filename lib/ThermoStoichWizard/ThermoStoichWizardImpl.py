@@ -213,7 +213,7 @@ class ThermoStoichWizard:
         plt.figure(figsize=(10,8))
         new_comp["H:C"] = new_comp.H / new_comp.C
         new_comp["O:C"] = new_comp.O / new_comp.C
-        sns.scatterplot("O:C", "H:C", hue="Class", s=45, data=new_comp)
+        sns.scatterplot("O:C", "H:C", hue="Class", s=100, data=new_comp)
         plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
         plt.tight_layout()
         plt.savefig(van_krevelen_lambda_bins_path)
