@@ -112,20 +112,20 @@ class FTICRResult(object):
         self.stoichMet_HCO3 = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].stoich_metabolic_HCO3 for cpd in self.all_stoich},
             orient='index', columns=stoich_colnames)
         
-        thermo_colnames = ["delGcox0PerE","delGcox0","delGcox","delGcat0","delGcat","delGan0_O2","delGan0_HCO3",
+        thermo_colnames = ["delGcox0PerC","delGcox0","delGcox","delGcat0","delGcat","delGan0_O2","delGan0_HCO3",
                 "delGan_O2","delGan_HCO3","delGdis_O2","delGdis_HCO3","lambda_O2","lambda_HCO3"]
         self.thermo = pd.DataFrame.from_dict({self.id2mf[cpd]:self.all_stoich[cpd].delta_gibbs_energy+self.all_stoich[cpd].th_lambda for cpd in self.all_stoich},
             orient='index', columns=thermo_colnames)
         
     def save_result_files(self, folder):
         # save to csv files
-        self.stoichD.to_csv(folder+'/stoichD.csv')
-        self.stoichA.to_csv(folder+'/stoichA.csv')
-        self.stoichCat.to_csv(folder+'/stoichCat.csv')
-        self.stoichAn_O2.to_csv(folder+'/stoichAn_O2.csv')
-        self.stoichAn_HCO3.to_csv(folder+'/stoichAn_HCO3.csv')
+        # self.stoichD.to_csv(folder+'/stoichD.csv')
+        # self.stoichA.to_csv(folder+'/stoichA.csv')
+        # self.stoichCat.to_csv(folder+'/stoichCat.csv')
+        # self.stoichAn_O2.to_csv(folder+'/stoichAn_O2.csv')
+        # self.stoichAn_HCO3.to_csv(folder+'/stoichAn_HCO3.csv')
         self.stoichMet_O2.to_csv(folder+'/stoichMet_O2.csv')
-        self.stoichMet_HCO3.to_csv(folder+'/stoichMet_HCO3.csv')
+        # self.stoichMet_HCO3.to_csv(folder+'/stoichMet_HCO3.csv')
         self.thermo.to_csv(folder+'/thermodynamic_props.csv')
     
     def create_fba_model_files(self, folder, prefix='temp'):
@@ -205,7 +205,7 @@ class FTICRResult(object):
         if self.thermo is not None:
             plt.close('all')
             g = sns.distplot(self.thermo[colname], label=label)
-            g.set_xlabel(label+"[kJ/mol]", fontsize=15)
+            g.set_xlabel(label+"[kJ/C-mol]", fontsize=15)
             g.set_ylabel('Distribution', fontsize=15)
             plt.legend(fontsize=15)
             plt.tight_layout()
@@ -229,7 +229,9 @@ class FTICRResult(object):
         df["O:C"] = df.O / df.C
 
         g = sns.scatterplot("O:C", "H:C", hue="Class", alpha=1, s=15, data=df)
-        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+        g.set_xlabel("O:C", fontsize=15)
+        g.set_ylabel("H:C", fontsize=15)
+        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=15)
         plt.tight_layout()
         
         plt.savefig(fout)
@@ -430,8 +432,8 @@ class ThermoStoichiometry(object):
 
         ne = -z+4*a+b-3*c-2*d+5*e-2*f  # number of electrons transferred in D 
         nosc = -ne/a+4  # nominal oxidataion state of carbon 
-        delGcox0PerE = 60.3-28.5*nosc  # kJ/C-mol
-        delGcox0 = delGcox0PerE*a*np.abs(stoich_electron_donor[0])  # kJ/rxn
+        delGcox0PerC = 60.3-28.5*nosc  # kJ/C-mol
+        delGcox0 = delGcox0PerC*a*np.abs(stoich_electron_donor[0])  # kJ/rxn
 
         # - estimate delGf0 for electron donor
         delGf0_D_zero = 0
@@ -489,7 +491,7 @@ class ThermoStoichiometry(object):
 
         return \
             [lambda_O2,lambda_HCO3], \
-            [delGcox0PerE,delGcox0,delGcox,delGcat0,delGcat,delGan0_O2,delGan0_HCO3,\
+            [delGcox0PerC,delGcox0,delGcox,delGcat0,delGcat,delGan0_O2,delGan0_HCO3,\
                 delGan_O2,delGan_HCO3,delGdis_O2,delGdis_HCO3],\
             stoichMet_O2,\
             stoichMet_HCO3

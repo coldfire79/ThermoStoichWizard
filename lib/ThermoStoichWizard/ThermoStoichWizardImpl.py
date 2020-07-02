@@ -101,8 +101,13 @@ class ThermoStoichWizard:
         output_folder = os.path.join(self.shared_folder, 'csv')
         os.mkdir(output_folder)
         fticr.save_result_files(output_folder)
-        output_filenames = ["stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3","thermodynamic_props"]
-        output_files = [{'path': output_folder+'/{}.csv'.format(n), 'name': '{}.csv'.format(n), 'label': n, 'description': n} for n in output_filenames]
+        # output_filenames = ["stoichD","stoichA","stoichCat","stoichAn_O2","stoichAn_HCO3","stoichMet_O2","stoichMet_HCO3","thermodynamic_props"]
+        output_filenames = ["stoichMet_O2","thermodynamic_props"]
+        output_files = [{
+                'path': output_folder+'/{}.csv'.format(n),
+                'name': '{}.csv'.format(n),
+                'label': n, 'description': n
+            } for n in output_filenames]
 
         # filter out the unassigned peaks
         num_peaks = fticr.num_peaks
@@ -213,17 +218,23 @@ class ThermoStoichWizard:
         plt.figure(figsize=(10,8))
         new_comp["H:C"] = new_comp.H / new_comp.C
         new_comp["O:C"] = new_comp.O / new_comp.C
-        sns.scatterplot("O:C", "H:C", hue="Class", s=100, data=new_comp)
-        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+        g = sns.scatterplot("O:C", "H:C", hue="Class", s=100, data=new_comp)
+        g.set_xlabel("O:C", fontsize=15)
+        g.set_ylabel("H:C", fontsize=15)
+        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=15)
         plt.tight_layout()
         plt.savefig(van_krevelen_lambda_bins_path)
 
         lambda_dist_path = os.path.join(html_folder, "lambda_dist.png")
         fticr.plot_lambda_dist(fout=lambda_dist_path)
-        delGcat0_dist_path = os.path.join(html_folder, "delGcat0_dist.png")
-        fticr.plot_delta_gibb_dist('delGcat0', r'$\Delta G_{Cox}^0$', delGcat0_dist_path)
-        delGcat_dist_path = os.path.join(html_folder, "delGcat_dist.png")
-        fticr.plot_delta_gibb_dist('delGcat', r'$\Delta G_{Cox}$', delGcat_dist_path)
+        # delGcat0_dist_path = os.path.join(html_folder, "delGcat0_dist.png")
+        # fticr.plot_delta_gibb_dist('delGcat0', r'$\Delta G_{Cox}^0$', delGcat0_dist_path)
+        # delGcat_dist_path = os.path.join(html_folder, "delGcat_dist.png")
+        # fticr.plot_delta_gibb_dist('delGcat', r'$\Delta G_{Cox}$', delGcat_dist_path)
+        delGcox0_dist_path = os.path.join(html_folder, "delGcox0_dist.png")
+        fticr.plot_delta_gibb_dist('delGcox0PerC', r'$\Delta G_{Cox}^0$', delGcox0_dist_path)
+        # delGcox_dist_path = os.path.join(html_folder, "delGcox_dist.png")
+        # fticr.plot_delta_gibb_dist('delGcox', r'$\Delta G_{Cox}$', delGcox_dist_path)
 
         output_files.append({'path': van_krevelen_path, 'name': 'van_krevelen.png',
             'label': 'van Krevelen diagram for compounds', 'description': 'van Krevelen diagram for compounds'})
@@ -232,12 +243,17 @@ class ThermoStoichWizard:
 
         output_files.append({'path': lambda_dist_path, 'name': 'lambda_dist.png',
             'label': 'lambda distribution', 'description': 'lambda distribution'})
-        output_files.append({'path': delGcat0_dist_path, 'name': 'delGcat0_dist.png',
-            'label': 'delGcat0 distribution',
-            'description': 'Gibbs free energy change for an electron donor half reaction'})
-        output_files.append({'path': delGcat_dist_path, 'name': 'delGcat_dist.png',
-            'label': 'delGcat distribution', 'description': 'Gibbs free energy change for catabolic reaction'})
-
+        # output_files.append({'path': delGcat0_dist_path, 'name': 'delGcat0_dist.png',
+        #     'label': 'delGcat0 distribution',
+        #     'description': 'Gibbs free energy change for an electron donor half reaction'})
+        # output_files.append({'path': delGcat_dist_path, 'name': 'delGcat_dist.png',
+        #     'label': 'delGcat distribution', 'description': 'Gibbs free energy change for catabolic reaction'})
+        output_files.append({'path': delGcox0_dist_path, 'name': 'delGcox0_dist.png',
+            'label': 'delGcox0 distribution',
+            'description': 'Gibbs energies for the oxidation half reactions'})
+        # output_files.append({'path': delGcox_dist_path, 'name': 'delGcox_dist.png',
+        #     'label': 'delGcox distribution',
+        #     'description': 'Gibbs energies for the oxidation half reactions'})
 
         summary_str = '<ul class="list-group list-group-flush">'
         summary_str += '<li class="list-group-item">Average: {:.3f}</li>'
@@ -245,8 +261,8 @@ class ThermoStoichWizard:
         summary_str += '<li class="list-group-item">Median: {:.3f}</li>'
         summary_str += '</ul>'
 
-        html_str = '<div class="col-md-4">'
-        html_str += '<div class="card mb-4 box-shadow">'
+        html_str = '<div class="col-md-6">'
+        html_str += '<div class="card mb-6 box-shadow">'
         html_str += '<img class="card-img-top" alt="lambda_dist" src="lambda_dist.png" style="width: 100%; display: block;">'
         html_str += '<div class="card-body">'
         html_str += '<p class="card-text">Energy coupling thermodynamic parameter</p>'
@@ -255,25 +271,25 @@ class ThermoStoichWizard:
         html_str += '</div>'
         html_str += '</div>'
 
-        html_str += '<div class="col-md-4">'
-        html_str += '<div class="card mb-4 box-shadow">'
-        html_str += '<img class="card-img-top" alt="delGcat0_dist" src="delGcat0_dist.png" style="width: 100%; display: block;">'
+        html_str += '<div class="col-md-6">'
+        html_str += '<div class="card mb-6 box-shadow">'
+        html_str += '<img class="card-img-top" alt="delGcox0_dist" src="delGcox0_dist.png" style="width: 100%; display: block;">'
         html_str += '<div class="card-body">'
         html_str += '<p class="card-text">Gibbs free energy change for catabolic reaction</p>'
         html_str += '</div>'
-        html_str += summary_str.format(*fticr.get_summary('delGcat0'))
+        html_str += summary_str.format(*fticr.get_summary('delGcox0PerC'))
         html_str += '</div>'
         html_str += '</div>'
         
-        html_str += '<div class="col-md-4">'
-        html_str += '<div class="card mb-4 box-shadow">'
-        html_str += '<img class="card-img-top" alt="delGcat_dist" src="delGcat_dist.png" style="width: 100%; display: block;">'
-        html_str += '<div class="card-body">'
-        html_str += '<p class="card-text">Gibbs free energy change for an electron donor half reaction</p>'
-        html_str += '</div>'
-        html_str += summary_str.format(*fticr.get_summary('delGcat'))
-        html_str += '</div>'
-        html_str += '</div>'
+        # html_str += '<div class="col-md-4">'
+        # html_str += '<div class="card mb-4 box-shadow">'
+        # html_str += '<img class="card-img-top" alt="delGcat_dist" src="delGcat_dist.png" style="width: 100%; display: block;">'
+        # html_str += '<div class="card-body">'
+        # html_str += '<p class="card-text">Gibbs free energy change for an electron donor half reaction</p>'
+        # html_str += '</div>'
+        # html_str += summary_str.format(*fticr.get_summary('delGcat'))
+        # html_str += '</div>'
+        # html_str += '</div>'
 
         html_str += '<div class="col-md-6">'
         html_str += '<div class="card mb-6 box-shadow">'
