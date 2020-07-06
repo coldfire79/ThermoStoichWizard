@@ -212,17 +212,34 @@ class ThermoStoichWizard:
         # figures
         #######################################################################
         van_krevelen_path = os.path.join(html_folder, "van_krevelen.png")
-        fticr.plot_van_krevelen(fout=van_krevelen_path)
+        # fticr.plot_van_krevelen(fout=van_krevelen_path)
+        
+        # fig, ax = plt.subplots(1,2,figsize=(12,6),sharex=True,sharey=True)
+        plt.figure(figsize=(8,6))
+        df = fticr._assigned_tbl.copy()
+        
+        df["H:C"] = df.H / df.C
+        df["O:C"] = df.O / df.C
+
+        g1 = sns.scatterplot("O:C", "H:C", hue="Class", alpha=1, s=15, data=df)
+        g1.set_xlabel("O:C", fontsize=15)
+        g1.set_ylabel("H:C", fontsize=15)
+        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=15)
+        plt.tight_layout()
+        plt.savefig(van_krevelen_path)
 
         van_krevelen_lambda_bins_path = os.path.join(html_folder, "van_krevelen_by_lambda_bins.png")
-        plt.figure(figsize=(10,8))
+        plt.figure(figsize=(8,6))
         new_comp["H:C"] = new_comp.H / new_comp.C
         new_comp["O:C"] = new_comp.O / new_comp.C
         g = sns.scatterplot("O:C", "H:C", hue="Class", s=100, data=new_comp)
         g.set_xlabel("O:C", fontsize=15)
         g.set_ylabel("H:C", fontsize=15)
+        g.set_xlim(g1.get_xlim())
+        g.set_ylim(g1.get_ylim())
         plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=15)
         plt.tight_layout()
+        # plt.savefig(van_krevelen_path)
         plt.savefig(van_krevelen_lambda_bins_path)
 
         lambda_dist_path = os.path.join(html_folder, "lambda_dist.png")
