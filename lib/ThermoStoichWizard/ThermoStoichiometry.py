@@ -398,7 +398,7 @@ class ThermoStoichiometry(object):
 
         for eA4Ana in eA4Anabolic:
             if eA4Ana == 'O2':
-                stoichAnStar_O2 = stoichAnStarB+(1/a)*stoich_electron_donor
+                stoichAnStar_O2 = stoichAnStarB+(1/float(a))*stoich_electron_donor
                 yEana = stoichAnStar_O2[7]
                 if yEana > 0:
                     yEa = stoich_electron_acceptor[7]
@@ -431,7 +431,7 @@ class ThermoStoichiometry(object):
         z = 0
 
         ne = -z+4*a+b-3*c-2*d+5*e-2*f  # number of electrons transferred in D 
-        nosc = -ne/a+4  # nominal oxidataion state of carbon 
+        nosc = -ne/float(a)+4  # nominal oxidataion state of carbon 
         delGcox0PerC = 60.3-28.5*nosc  # kJ/C-mol
         delGcox0 = delGcox0PerC*a*np.abs(stoich_electron_donor[0])  # kJ/rxn
 
