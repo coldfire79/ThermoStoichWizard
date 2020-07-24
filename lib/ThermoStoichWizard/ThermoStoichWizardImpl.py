@@ -118,7 +118,12 @@ class ThermoStoichWizard:
         #######################################################################
         #  average compositions by lambda bins
         #######################################################################
-        new_comp = fticr.average_by_lambda_bins(n_bins=n_lambda_bins, cutoff=lambda_cutoff)
+        if params['bin_method'] == "cumulative":
+            new_comp = fticr.average_by_lambda_bins(n_bins=n_lambda_bins, cutoff=lambda_cutoff)
+        elif params['bin_method'] == "uniform":
+            new_comp = fticr.average_by_lambda_bins_uniform(n_bins=n_lambda_bins, cutoff=lambda_cutoff)
+        else:
+            raise("bin_method was wrong:", params['bin_method'])
         average_comp_path = os.path.join(output_folder, "avg_comp_from_lambda_bins.csv")
         new_comp.to_csv(average_comp_path)
 

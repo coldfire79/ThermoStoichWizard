@@ -32,6 +32,35 @@
           }
         },
         {
+          "id": "bin_method",
+          "optional" : false,
+          "advanced": true,
+          "allow_multiple" : false,
+          "field_type" : "dropdown",
+          "dropdown_options" : {
+              "options" : [
+                 {
+                    "id" : "uniform",
+                    "display" : "Uniform",
+                    "ui_name" : "Uniform",
+                    "value" : "uniform"
+                 },
+                 {
+                    "value" : "cumulative",
+                    "ui_name" : "Cumulative",
+                    "display" : "Cumulative",
+                    "id" : "cumulative"
+                 }
+              ]
+          },
+          "default_values" : [
+              "cumulative"
+          ],
+          "text_options" : {
+              "valid_ws_types" : []
+          }
+        },
+        {
           "id" : "lambda_cutoff",
           "optional" : false,
           "advanced" : true,

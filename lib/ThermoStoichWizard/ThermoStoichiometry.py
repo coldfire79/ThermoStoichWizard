@@ -236,10 +236,11 @@ class FTICRResult(object):
         
         plt.savefig(fout)
         
-    def average_by_lambda_bins(self, n_bins=10, cutoff=5):
+    def average_by_lambda_bins_uniform(self, n_bins=10, cutoff=5):
         '''
-        average compositions per each bin in the lambda distribution after 
-        filtering out the two-side tails by a cutoff percent (%)
+        average compositions per each bin (uniform interval in each lambda bin)
+        in the lambda distribution after filtering out the two-side tails by
+        a cutoff percent (%)
         '''
         assert 0 <= cutoff < 100, "cutoff must be 0 <= cutoff < 100"
         assert 0 < n_bins, "n_bins must be 0 < n_bins"
@@ -259,8 +260,57 @@ class FTICRResult(object):
             lambda_max = np.amax(lambda_dist)
         print('lambda_min', lambda_min, 'lambda_max', lambda_max)
 
-        # binning
+        # get the bins
         bins = np.linspace(lambda_min, lambda_max, n_bins+1)
+        print("bins:", bins)
+
+        # binning
+        labels = ['Bin{}'.format(i+1) for i in range(n_bins)]
+        comp_df['Class'] = pd.cut(comp_df['lambda'], bins=bins, labels=labels)
+        tdf = comp_df[comp_df['Class'].notnull()]
+
+        new_comp = tdf.groupby('Class').mean()
+        new_comp['Na'] = 0
+        new_comp['C13'] = 0
+
+        return new_comp.reset_index()
+
+    def average_by_lambda_bins(self, n_bins=10, cutoff=5):
+        '''
+        average compositions per each bin in the lambda distribution after 
+        filtering out the two-side tails by a cutoff percent (%). Each bin is 
+        split in a cummulative fashion, indicating each bin has the same area
+        in the lambda distribution.
+        '''
+        assert 0 <= cutoff < 100, "cutoff must be 0 <= cutoff < 100"
+        assert 0 < n_bins, "n_bins must be 0 < n_bins"
+
+        num_compounds = self.thermo.shape[0]
+
+        assert n_bins < num_compounds, "n_bins must be n_bins < number of compounds"
+        
+        # data
+        lambda_dist = self.thermo.lambda_O2.values
+        comp_df = self._assigned_tbl[REQUIRED_COLUMNS].copy()
+        # th_lambda[0] --> lambda_O2
+        comp_df['lambda'] = comp_df.apply(lambda x: self.all_stoich[x.name].th_lambda[0], axis=1)
+
+        # get the bins
+        bins = []
+        cum_interval = (100-cutoff*2) / n_bins
+        print('cum_interval',cum_interval)
+        if cutoff == 0:
+            bins = [0]
+        else:
+            bins = [np.percentile(lambda_dist, cutoff)]
+
+        th = cutoff
+        for i in range(n_bins):
+            th += cum_interval
+            bins.append(np.percentile(lambda_dist, th))
+        print("bins:", bins)
+        # binning
+        # bins = np.linspace(lambda_min, lambda_max, n_bins+1)
         labels = ['Bin{}'.format(i+1) for i in range(n_bins)]
         comp_df['Class'] = pd.cut(comp_df['lambda'], bins=bins, labels=labels)
         tdf = comp_df[comp_df['Class'].notnull()]

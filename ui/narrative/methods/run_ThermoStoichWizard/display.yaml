@@ -40,6 +40,14 @@ parameters :
         long-hint  : |
             The number of lambda bins to sample reactions
 
+    bin_method :
+        ui-name : |
+            Binning method
+        short-hint : |
+            Binning method
+        long-hint  : |
+            Binning method
+
     lambda_cutoff :
         ui-name : |
             The cutoff % in the lambda distribution
