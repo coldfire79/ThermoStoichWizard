@@ -105,6 +105,9 @@
                     "input_parameter": "n_lambda_bins",
                     "target_property": "n_lambda_bins"
                 },{
+                    "input_parameter": "bin_method",
+                    "target_property": "bin_method"
+                },{
                     "input_parameter": "lambda_cutoff",
                     "target_property": "lambda_cutoff"
                 },{
