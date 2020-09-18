@@ -487,7 +487,7 @@ class ThermoStoichiometry(object):
 
         # - estimate delGf0 for electron donor
         delGf0_D_zero = 0
-        delGf0_zero = np.array([delGf0_D_zero, -237.2, -586.8, -79.3, -1096.1, 12.1, 0, 0, 16.4, -67])
+        delGf0_zero = np.array([delGf0_D_zero, -237.2, -586.9, -79.5, -1089.1, 12.0, 0, 0, 16.5, -67])
         delGcox0_zero = np.dot(delGf0_zero, stoich_electron_donor)
         delGf0_D_est = (delGcox0-delGcox0_zero)/stoich_electron_donor[0]
         # - finally, delGf0
