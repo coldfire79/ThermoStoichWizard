@@ -34,9 +34,9 @@ class ThermoStoichWizard:
     # state. A method could easily clobber the state set by another while
     # the latter method is running.
     ######################################### noqa
-    VERSION = "0.0.1"
+    VERSION = "0.0.2"
     GIT_URL = "https://github.com/coldfire79/ThermoStoichWizard.git"
-    GIT_COMMIT_HASH = "4d5870ae2d8b1d6baef2cb17e8e3f0869b596cd2"
+    GIT_COMMIT_HASH = "1c3776e6e16251db8a131ca5a9397b0c746588c2"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER
@@ -216,36 +216,42 @@ class ThermoStoichWizard:
         #######################################################################
         # figures
         #######################################################################
-        van_krevelen_path = os.path.join(html_folder, "van_krevelen.png")
-        # fticr.plot_van_krevelen(fout=van_krevelen_path)
-        
-        # fig, ax = plt.subplots(1,2,figsize=(12,6),sharex=True,sharey=True)
-        plt.figure(figsize=(7,5))
-        df = fticr._assigned_tbl.copy()
-        
-        df["H:C"] = df.H / df.C
-        df["O:C"] = df.O / df.C
+        if "Class" in fticr._assigned_tbl.columns:
+            van_krevelen_available = True
+        else:
+            van_krevelen_available = False
 
-        g1 = sns.scatterplot("O:C", "H:C", hue="Class", alpha=1, s=15, data=df)
-        g1.set_xlabel("O:C", fontsize=15)
-        g1.set_ylabel("H:C", fontsize=15)
-        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=10)
-        plt.tight_layout()
-        plt.savefig(van_krevelen_path)
+        if van_krevelen_available:
+            van_krevelen_path = os.path.join(html_folder, "van_krevelen.png")
+            # fticr.plot_van_krevelen(fout=van_krevelen_path)
+            
+            # fig, ax = plt.subplots(1,2,figsize=(12,6),sharex=True,sharey=True)
+            plt.figure(figsize=(7,5))
+            df = fticr._assigned_tbl.copy()
+            
+            df["H:C"] = df.H / df.C
+            df["O:C"] = df.O / df.C
 
-        van_krevelen_lambda_bins_path = os.path.join(html_folder, "van_krevelen_by_lambda_bins.png")
-        plt.figure(figsize=(7,5))
-        new_comp["H:C"] = new_comp.H / new_comp.C
-        new_comp["O:C"] = new_comp.O / new_comp.C
-        g = sns.scatterplot("O:C", "H:C", hue="Class", s=100, data=new_comp)
-        g.set_xlabel("O:C", fontsize=15)
-        g.set_ylabel("H:C", fontsize=15)
-        g.set_xlim(g1.get_xlim())
-        g.set_ylim(g1.get_ylim())
-        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=12)
-        plt.tight_layout()
-        # plt.savefig(van_krevelen_path)
-        plt.savefig(van_krevelen_lambda_bins_path)
+            g1 = sns.scatterplot("O:C", "H:C", hue="Class", alpha=1, s=15, data=df)
+            g1.set_xlabel("O:C", fontsize=15)
+            g1.set_ylabel("H:C", fontsize=15)
+            plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=10)
+            plt.tight_layout()
+            plt.savefig(van_krevelen_path)
+
+            van_krevelen_lambda_bins_path = os.path.join(html_folder, "van_krevelen_by_lambda_bins.png")
+            plt.figure(figsize=(7,5))
+            new_comp["H:C"] = new_comp.H / new_comp.C
+            new_comp["O:C"] = new_comp.O / new_comp.C
+            g = sns.scatterplot("O:C", "H:C", hue="Class", s=100, data=new_comp)
+            g.set_xlabel("O:C", fontsize=15)
+            g.set_ylabel("H:C", fontsize=15)
+            g.set_xlim(g1.get_xlim())
+            g.set_ylim(g1.get_ylim())
+            plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=12)
+            plt.tight_layout()
+            # plt.savefig(van_krevelen_path)
+            plt.savefig(van_krevelen_lambda_bins_path)
 
         lambda_dist_path = os.path.join(html_folder, "lambda_dist.png")
         fticr.plot_lambda_dist(fout=lambda_dist_path)
@@ -258,10 +264,11 @@ class ThermoStoichWizard:
         # delGcox_dist_path = os.path.join(html_folder, "delGcox_dist.png")
         # fticr.plot_delta_gibb_dist('delGcox', r'$\Delta G_{Cox}$', delGcox_dist_path)
 
-        output_files.append({'path': van_krevelen_path, 'name': 'van_krevelen.png',
-            'label': 'van Krevelen diagram for compounds', 'description': 'van Krevelen diagram for compounds'})
-        output_files.append({'path': van_krevelen_lambda_bins_path, 'name': 'van_krevelen_by_lambda_bins.png',
-            'label': 'van Krevelen diagram for each lambda bin', 'description': 'van Krevelen diagram for each lambda bin'})
+        if van_krevelen_available:
+            output_files.append({'path': van_krevelen_path, 'name': 'van_krevelen.png',
+                'label': 'van Krevelen diagram for compounds', 'description': 'van Krevelen diagram for compounds'})
+            output_files.append({'path': van_krevelen_lambda_bins_path, 'name': 'van_krevelen_by_lambda_bins.png',
+                'label': 'van Krevelen diagram for each lambda bin', 'description': 'van Krevelen diagram for each lambda bin'})
 
         output_files.append({'path': lambda_dist_path, 'name': 'lambda_dist.png',
             'label': 'lambda distribution', 'description': 'lambda distribution'})
@@ -312,24 +319,25 @@ class ThermoStoichWizard:
         # html_str += summary_str.format(*fticr.get_summary('delGcat'))
         # html_str += '</div>'
         # html_str += '</div>'
+        
+        if van_krevelen_available:
+            html_str += '<div class="col-md-6">'
+            html_str += '<div class="card mb-6 box-shadow">'
+            html_str += '<img class="card-img-top" alt="van_krevelen" src="van_krevelen.png" style="width: 100%; display: block;">'
+            html_str += '<div class="card-body">'
+            html_str += '<p class="card-text">Van Krevelen diagram for all compositions</p>'
+            html_str += '</div>'
+            html_str += '</div>'
+            html_str += '</div>'
 
-        html_str += '<div class="col-md-6">'
-        html_str += '<div class="card mb-6 box-shadow">'
-        html_str += '<img class="card-img-top" alt="van_krevelen" src="van_krevelen.png" style="width: 100%; display: block;">'
-        html_str += '<div class="card-body">'
-        html_str += '<p class="card-text">Van Krevelen diagram for all compositions</p>'
-        html_str += '</div>'
-        html_str += '</div>'
-        html_str += '</div>'
-
-        html_str += '<div class="col-md-6">'
-        html_str += '<div class="card mb-6 box-shadow">'
-        html_str += '<img class="card-img-top" alt="van_krevelen_by_lambda_bins" src="van_krevelen_by_lambda_bins.png" style="width: 100%; display: block;">'
-        html_str += '<div class="card-body">'
-        html_str += '<p class="card-text">Van Krevelen Diagram for average compositions of lambda bins</p>'
-        html_str += '</div>'
-        html_str += '</div>'
-        html_str += '</div>'
+            html_str += '<div class="col-md-6">'
+            html_str += '<div class="card mb-6 box-shadow">'
+            html_str += '<img class="card-img-top" alt="van_krevelen_by_lambda_bins" src="van_krevelen_by_lambda_bins.png" style="width: 100%; display: block;">'
+            html_str += '<div class="card-body">'
+            html_str += '<p class="card-text">Van Krevelen Diagram for average compositions of lambda bins</p>'
+            html_str += '</div>'
+            html_str += '</div>'
+            html_str += '</div>'
 
         with open(os.path.join(os.path.dirname(__file__), 'templates', 'template.html'),
                   'r') as template_file:
@@ -371,8 +379,12 @@ class ThermoStoichWizard:
 
     def run_lambda_analysis(self, ctx, params):
         """
-        This example function accepts any number of parameters and returns results in a KBaseReport
-        :param params: instance of mapping from String to unspecified object
+        run_lambda_analysis: perform lambda analysis
+        :param params: instance of type "LambdaParams" -> structure:
+           parameter "lambda_tbl" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "stoich_tbl" of type "obj_ref" (An X/Y/Z
+           style reference), parameter "vh_cs" of String, parameter "vh_o2"
+           of String, parameter "workspace_name" of String
         :returns: instance of type "ReportResults" -> structure: parameter
            "report_name" of String, parameter "report_ref" of String
         """
@@ -388,7 +400,6 @@ class ThermoStoichWizard:
                              'output is not type dict as required.')
         # return the results
         return [output]
-
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",

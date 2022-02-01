@@ -71,7 +71,7 @@ class ThermoStoichWizardTest(unittest.TestCase):
         ########################################################################
         params={
             'workspace_name': self.wsName,
-            "input_tbl": "39537/3/1",
+            "input_tbl": "101278/6/1",
             "n_lambda_bins": "10",
             "bin_method": "cumulative",
             # "bin_method": "uniform",

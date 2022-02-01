@@ -345,7 +345,7 @@ class Application(object):
         self.rpc_service.add(impl_ThermoStoichWizard.run_lambda_analysis,
                              name='ThermoStoichWizard.run_lambda_analysis',
                              types=[dict])
-        self.method_authentication['ThermoStoichWizard.run_lambda_analysis'] = 'required'
+        self.method_authentication['ThermoStoichWizard.run_lambda_analysis'] = 'required'  # noqa
         self.rpc_service.add(impl_ThermoStoichWizard.status,
                              name='ThermoStoichWizard.status',
                              types=[dict])
