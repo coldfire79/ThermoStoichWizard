@@ -374,8 +374,8 @@ class ThermoStoichiometry(object):
         b = self.chemical_composition['H']
         c = self.chemical_composition['N']
         d = self.chemical_composition['O']
-        e = self.chemical_composition['S']
-        f = self.chemical_composition['P']
+        e = self.chemical_composition['P']
+        f = self.chemical_composition['S']
         z = 0
 
         return np.array([
@@ -410,13 +410,7 @@ class ThermoStoichiometry(object):
                                      stoich_electron_acceptor):
         # "C","H","N","O","S","P"
         a = self.chemical_composition['C']
-        # b = self.chemical_composition['H']
-        # c = self.chemical_composition['N']
-        # d = self.chemical_composition['O']
-        # e = self.chemical_composition['S']
-        # f = self.chemical_composition['P']
-        # z = 0
-
+        
         chemFormBiom = [1, 1.8, 0.2, 0.5, 0, 0, 0]  # C H_1.8 N_0.2 O_0.5
         aB = chemFormBiom[0]
         bB = chemFormBiom[1]
@@ -476,8 +470,8 @@ class ThermoStoichiometry(object):
         b = chemical_composition['H']
         c = chemical_composition['N']
         d = chemical_composition['O']
-        e = chemical_composition['S']
-        f = chemical_composition['P']
+        e = chemical_composition['P']
+        f = chemical_composition['S']
         z = 0
 
         ne = -z+4*a+b-3*c-2*d+5*e-2*f  # number of electrons transferred in D 
